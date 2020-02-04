@@ -11,9 +11,8 @@ set(PROPERTY_TESTS VariableTest.cpp PropertyTest.cpp TestCasePropertyClass.h Tes
 #Target
 if(NOT TARGET PropertyTest)
     add_executable(PropertyTest ${PROPERTY_TESTS} ${INCL_PROPERTY_HDR})
+    target_include_directories(PropertyTest PUBLIC ${GOOGLETEST_DIR} ${GOOGLETEST_DIR}/include)
     target_link_libraries(PropertyTest PUBLIC Property gtest gtest_main gmock)
 endif()
 
-#Add include dirs
-include_directories(.. ${gtest_SOURCE_DIR} ${gtest_SOURCE_DIR}/include)
 
