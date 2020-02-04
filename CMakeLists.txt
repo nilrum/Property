@@ -25,8 +25,9 @@ if(NOT TARGET gtest)
         message("Googletest cloned")
         set(GOOGLETEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/googletest CACHE FILEPATH "GOOGLETEST_DIR")
         message("Added GOOGLETEST_DIR = [${GOOGLETEST_DIR}]")
+        add_subdirectory(googletest)
     endif()
-    add_subdirectory(googletest)
+
 endif()
 
 add_subdirectory(tests)
