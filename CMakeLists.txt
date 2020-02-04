@@ -4,13 +4,12 @@ project(Property)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include_directories(pugixml/src)
-
 set(PROPERTY_HDR Types.h Variable.h PropertyClass.h PropertyClass.hpp Serialization.h PropertyEditor.h)
 set(PROPERTY_SRC Variable.cpp PropertyClass.cpp Serialization.cpp PropertyEditor.cpp pugixml/src/pugixml.cpp)
 
 if(NOT TARGET Property)
     add_library(Property ${PROPERTY_HDR} ${PROPERTY_SRC})
+    target_include_directories(Property PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PRIVATE pugixml/src)
 endif()
 
 #Если gtest не подключен
