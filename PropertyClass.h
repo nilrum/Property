@@ -22,7 +22,7 @@ using TPtrPropertyClass = std::shared_ptr<TPropertyClass>;
 using TGetFun = std::function<TVariable(const TPropertyClass *)>;
 using TSetFun = std::function<void(TPropertyClass *, const TVariable &)>;
 using TGetIndFun = std::function<TVariable(const TPropertyClass *, int)>;
-
+using TChangePropertyClass = std::function<void()>;
 
 #include "PropertyClass.hpp"
 
@@ -192,10 +192,10 @@ private:
     bool CheckSet(int index) const;
 };
 
-class TPropertyClass
-{
+class TPropertyClass{
 protected:
     TString name;
+    TChangePropertyClass change;
 public:
     PROPERTIES_BASE(TPropertyClass)
     static bool InitProperties();
@@ -228,6 +228,9 @@ public:
 
     void DelFromArray(int index, const TVariable &value);
     void DelFromArray(const TString &nameProperty, const TVariable &value);
+
+    void Change();//оповестить тех кто подписан что объект изменился
+    void SetOnChange(const TChangePropertyClass& value);
 };
 
 template<typename T>

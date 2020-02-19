@@ -274,3 +274,13 @@ void TPropertyClass::DelFromArray(const TString &nameProperty, const TVariable &
     DelFromArray(Manager().IndexProperty(nameProperty), value);
 }
 
+void TPropertyClass::Change()
+{
+    if(bool(change)) change();
+}
+
+void TPropertyClass::SetOnChange(const TChangePropertyClass &value)
+{
+    change = value;
+}
+

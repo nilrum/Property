@@ -157,12 +157,16 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
         size_t COUNT() const { return NAME.size(); }\
         TYPE GET(int index) const { return NAME[index]; }
 
-#define PROPERTY_ARRAY_ADD_FUN(TYPE, NAME, COUNT, GET, ADD)\
-    PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
-        TYPE& ADD(TYPE&& value){ NAME.push_back(value);  return NAME.back(); }\
-        TYPE& ADD(const TYPE& value){ NAME.push_back(value);  return NAME.back();  }
+#define PROPERTY_ARRAY_ADD_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, OTHER)\
+        PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
+        TYPE& ADD(TYPE&& value){ NAME.push_back(value);  return NAME.back(); OTHER; }\
+        TYPE& ADD(const TYPE& value){ NAME.push_back(value);  return NAME.back(); OTHER; }
+
+#define PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL, OTHER)\
+    PROPERTY_ARRAY_ADD_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, OTHER)\
+    void DEL(const TYPE& value){ std::remove(NAME.begin(), NAME.end(), value); OTHER; }
 
 #define PROPERTY_ARRAY_FUN(TYPE, NAME, COUNT, GET, ADD, DEL)\
-    PROPERTY_ARRAY_ADD_FUN(TYPE, NAME, COUNT, GET, ADD)\
-        void DEL(const TYPE& value){ std::remove(NAME.begin(), NAME.end(), value); }
+    PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL,)
 
+#define PROPERTY_ARRAY_FUN_CHG(TYPE, NAME, COUNT, GET, ADD, DEL) PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL, Change())
