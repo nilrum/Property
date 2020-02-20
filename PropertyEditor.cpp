@@ -86,7 +86,7 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
     if(static_cast<bool>(obj) == false || IsProp()) return;
     const TPropertyManager& man = value->Manager();
     for(int i = 0; i < man.CountProperty(); i++)
-        if(man.Property(i).IsClass() == false && man.Property(i).IsArray() == false)//если есть свойства не класс и не массив
+        if(man.Property(i).IsPod())//если есть свойства не класс и не массив
             if(CheckProp(man.Property(i)))
                 props.emplace_back(obj, this, i);
 }
@@ -113,7 +113,7 @@ bool TObjTree::HasChild(const TPtrPropertyClass &value) const
     if(static_cast<bool>(value) == false) return false;
     const TPropertyManager& man = value->Manager();
     for(int i = 0; i < man.CountProperty(); i++)
-        if(man.Property(i).IsClass())//если есть свойства класс или массив
+        if(man.Property(i).IsPod() == false)//если есть свойства класс или массив
         {
             TVariable v;
             if(man.Property(i).IsArray() == false)
@@ -176,33 +176,30 @@ void TObjTree::DelChild(TPtrPropertyClass value, int indProp)
 {
     childs.erase(
             std::find_if(childs.begin(), childs.end(),
-                    [value](const TObjTree& it){ return it.Obj() == value; }
-                    )
-                    );
+                    [value](const TObjTree* it) -> bool { return it->Obj() == value; }
+                    ));
     obj->DelFromArray(indProp, PropertyClassToVariable(value));
 }
 
-void TObjTree::DelChild(int index)
+void TObjTree::DelChild(TObjTree* value)
 {
-    DelChild(childs[index].Obj(), childs[index].IndProp());
+    DelChild(value->Obj(), value->IndProp());
 }
 
-void TObjTree::Load()
+void TObjTree::Load(bool refind)
 {
-    if(isLoaded) return;
+    if(isLoaded && refind == false) return;
     ClearChilds();
-    if(static_cast<bool>(obj) == false) return;
+    if(obj == nullptr) return;
     const TPropertyManager& man = obj->Manager();
     for(int i = 0; i < man.CountProperty(); i++)
-        if(man.Property(i).IsClass())//если свойства класс или массив
+        if(man.Property(i).IsClass())//если свойства класс
         {
-            if(man.Property(i).IsArray() == false)
-            {
-                TPtrPropertyClass ptr = VariableToPropClass(obj->ReadProperty(i));
-                if(CheckType(ptr))
-                    childs.emplace_back(ptr, this, i);
-            }
-            else
+            TPtrPropertyClass ptr = VariableToPropClass(obj->ReadProperty(i));
+            if(CheckType(ptr))
+                childs.emplace_back(ptr, this, i);
+        }
+        else if(man.Property(i).IsArray())
             {
                 int count = obj->CountInArray(i);
                 for(int j = 0; j < count; j++)
@@ -212,7 +209,6 @@ void TObjTree::Load()
                         childs.emplace_back(ptr, this, i);
                 }
             }
-        }
     isLoaded = true;
 }
 
@@ -223,13 +219,13 @@ bool TObjTree::IsLoaded() const
 
 bool TObjTree::IsChilds() const
 {
-    if(indProp != -1 && parent->Obj()->Manager().Property(indProp).IsClass() == false) return false;
+    if(indProp != -1 && parent->Obj()->Manager().Property(indProp).IsPod()) return false;
     return HasChild(obj);
 }
 
 bool TObjTree::IsProp() const
 {
-    return indProp != -1 && parent && parent->Obj()->Manager().Property(indProp).IsClass() == false;
+    return indProp != -1 && parent && parent->Obj()->Manager().Property(indProp).IsPod();
 }
 
 
@@ -243,12 +239,12 @@ TObjTree *TObjTree::Parent()
     return parent;
 }
 
-int TObjTree::Num() const
+int TObjTree::Num(int def) const
 {
     if(parent)
         for(int i = 0; i < parent->CountChilds(); i++)
             if(&parent->Child(i) == this) return i;
-    return 0;
+    return def;
 }
 
 int TObjTree::LoadedCount()
@@ -260,18 +256,31 @@ int TObjTree::LoadedCount()
 TString TObjTree::Name() const
 {
     if(indProp == -1)
-        return "Name";
+    {
+        if(obj->Name().empty()) return "Name";
+        else return obj->Name();
+    }
     else
-        return parent->Obj()->Manager().Property(indProp).Name();
+    {
+        const TPropInfo & info = parent->Obj()->Manager().Property(indProp);
+        TString rez = info.Name();
+        if(info.IsArray() && obj->Name().empty() == false)//для элементов массива возвращаем его имя если есть
+            rez = obj->Name();
+        return rez;
+    }
 }
 
-TVariable TObjTree::Value() const
+TVariable TObjTree::Value(bool isType) const
 {
-    //если indProp != -1 то parent должен быть обязательно
     if(IsProp())
         return obj->ReadProperty(indProp);
     else
-        return (obj->TypeClass() + "::" + obj->Name()).c_str();
+    {
+        if(isType)
+            return (obj->TypeClass() + "::" + obj->Name()).c_str();
+        else
+            return TString();
+    }
 }
 
 void TObjTree::SetValue(const TVariable &value)

@@ -10,16 +10,18 @@
 
 template<class T>
 class TPtrVector{
+private:
+    std::vector<T*> data;
 public:
     using value_type = T;
-    using iterator = T*;
+    using iterator = typename std::vector<T*>::iterator;
     ~TPtrVector()
     {
         clear();
     }
 
-    T& operator[] (int index){ *data[index]; }
-    const T& operator[] (int index) const { *data[index]; }
+    T& operator[] (int index){ return *data[index]; }
+    const T& operator[] (int index) const { return *data[index]; }
     size_t size() const { return data.size(); }
 
     void push_back(T* value)
@@ -38,13 +40,14 @@ public:
         data.clear();
     }
 
-    auto begin()
+    iterator begin()
     {
-        return &data[0];
+        return data.begin();
     }
-    auto end()
+
+    iterator end()
     {
-        return (&data.back()) + 1;
+        return data.end();
     }
 
     void erase(iterator value)
@@ -53,8 +56,6 @@ public:
         data.erase(value);
         delete val;
     }
-private:
-    std::vector<T*> data;
 };
 
 class TObjTree{
@@ -67,11 +68,11 @@ public:
     const TPtrPropertyClass& Obj() const;
     int IndProp() const;
 
-    void Load();
+    void Load(bool refind = false);
 
     bool IsLoaded() const;
     bool IsChilds() const;//отображает может ли быть объекты в childs
-    bool IsProp() const;    //отображает это свойство или класс
+    bool IsProp() const;  //отображает это свойство или класс
 
     size_t CountProps() const;
     TObjTree& Prop(int index);
@@ -80,23 +81,23 @@ public:
     TObjTree& Child(int index);
     const TObjTree& Child(int index) const;
     void AddChild(TPtrPropertyClass value, int indProp);
-    void DelChild(int index);
+    void DelChild(TObjTree* value);
     void DelChild(TPtrPropertyClass value, int indProp);
 
     int LoadedCount();
 
     TString Name() const;
-    TVariable Value() const;
+    TVariable Value(bool isType = true) const;
     void SetValue(const TVariable& value);
 
-    TObjTree* Parent();
-    int Num() const;
+    TObjTree* Parent();             //родительский TObjTree
+    int Num(int def = -1) const;    //номер по порядку в Child списке родителя
 
     using TArrayInfo = std::tuple<TString, int>;
     using TVectArrayInfo = std::vector<TArrayInfo>;
-    TVectArrayInfo ArrayInfo() const;
+    TVectArrayInfo ArrayInfo() const;//возвращает список свойств массивов и их номера
 
-    using TVecObjTree = std::deque<TObjTree>;
+    using TVecObjTree = TPtrVector<TObjTree>;
 private:
     TObjTree* parent = nullptr;
     TPtrPropertyClass obj;

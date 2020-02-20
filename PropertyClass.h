@@ -121,7 +121,8 @@ public:
 
     inline bool IsReadOnly() const { return static_cast<bool>(set) == false; }
 
-    inline bool IsClass() const { return isClass; }
+    inline bool IsPod() const { return !isClass; }
+    inline bool IsClass() const { return isClass && !IsArray(); }
     inline bool IsArray() const { return static_cast<bool>(getArray); }
 };
 

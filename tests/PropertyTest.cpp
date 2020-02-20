@@ -87,7 +87,7 @@ TEST(PropertyTest, TPropertyClass)
     EXPECT_EQ(man.Property(0).IsStorable(), true);
     EXPECT_EQ(man.Property(0).IsLoadable(), true);
     EXPECT_EQ(man.Property(0).IsReadOnly(), false);
-    EXPECT_EQ(man.Property(0).IsClass(), false);
+    EXPECT_EQ(man.Property(0).IsPod(), true);
     EXPECT_EQ(man.Property(0).IsArray(), false);
 
 }
@@ -323,7 +323,7 @@ TEST(PropertyTest, Manager)
     EXPECT_EQ(prop.IsReadOnly(), true);
     EXPECT_EQ(prop.IsStorable(), false);
     EXPECT_EQ(prop.IsLoadable(), false);
-    EXPECT_EQ(prop.IsClass(), false);
+    EXPECT_EQ(prop.IsPod(), true);
     EXPECT_EQ(prop.IsArray(), false);
 
     TPropInfo& info = m.AddProperty("type", "prop");
@@ -363,7 +363,7 @@ TEST(PropertyTest, Manager)
     EXPECT_EQ(infoArray.IsReadOnly(), true);
     EXPECT_EQ(infoArray.IsStorable(), true);
     EXPECT_EQ(infoArray.IsLoadable(), false);
-    EXPECT_EQ(infoArray.IsClass(), true);
+    EXPECT_EQ(infoArray.IsClass(), false);
     EXPECT_EQ(infoArray.IsArray(), true);
 
     infoArray.AddArray(SetFun(&TPropertyInher::AddChild));
@@ -372,7 +372,7 @@ TEST(PropertyTest, Manager)
     EXPECT_EQ(infoArray.IsReadOnly(), false);
     EXPECT_EQ(infoArray.IsStorable(), true);
     EXPECT_EQ(infoArray.IsLoadable(), true);
-    EXPECT_EQ(infoArray.IsClass(), true);
+    EXPECT_EQ(infoArray.IsClass(), false);
     EXPECT_EQ(infoArray.IsArray(), true);
 }
 
