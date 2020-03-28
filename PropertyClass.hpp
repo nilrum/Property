@@ -147,24 +147,28 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
 #define PROPERTY_CALL(TYPE, NAME, GET, SET, INDEX)\
      APROPERTY(TYPE, NAME).Get(GetFun(&TYPENAME::GET, (int)INDEX)).Set(SetFun(&TYPENAME::SET, (int)INDEX))
 
-#define PROPERTY_FUN(TYPE, NAME, GET, SET)\
+#define PROPERTY_FUN_IMPL(TYPE, NAME, GET, SET, OTHER)\
     public:\
         TYPE GET() const { return NAME; };\
-        TYPENAME& SET(const TYPE& value) { NAME = value; return *this; }
+        TYPENAME& SET(const TYPE& value) { NAME = value; OTHER; return *this; }
+
+#define PROPERTY_FUN(TYPE, NAME, GET, SET) PROPERTY_FUN_IMPL(TYPE, NAME, GET, SET, )
+#define PROPERTY_FUN_CHG(TYPE, NAME, GET, SET) PROPERTY_FUN_IMPL(TYPE, NAME, GET, SET, Change())
 
 #define PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
     public:\
         size_t COUNT() const { return NAME.size(); }\
-        TYPE GET(int index) const { return NAME[index]; }
+        const TYPE& GET(int index) const { return NAME[index]; }
 
 #define PROPERTY_ARRAY_ADD_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, OTHER)\
         PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
-        TYPE& ADD(TYPE&& value){ NAME.push_back(value); OTHER; return NAME.back(); }\
-        TYPE& ADD(const TYPE& value){ NAME.push_back(value); OTHER; return NAME.back(); }
+        const TYPE& ADD(TYPE&& value){ NAME.push_back(value); OTHER; return NAME.back(); }\
+        const TYPE& ADD(const TYPE& value){ NAME.push_back(value); OTHER; return NAME.back(); }
 
 #define PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL, OTHER)\
     PROPERTY_ARRAY_ADD_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, OTHER)\
-    void DEL(const TYPE& value){ std::remove(NAME.begin(), NAME.end(), value); OTHER; }
+        void DEL(const TYPE& value){ \
+            for(auto it = NAME.begin(); it != NAME.end(); it++) if(*it == value){ NAME.erase(it); break; }; OTHER; }
 
 #define PROPERTY_ARRAY_FUN(TYPE, NAME, COUNT, GET, ADD, DEL)\
     PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL,)

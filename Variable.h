@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <memory>
 #include <any>
 
@@ -20,6 +21,7 @@ class TVariableExt
 {
 public:
     virtual std::string TypeName() const = 0;
+    virtual size_t Size() const = 0;
 };
 
 template<typename T>
@@ -31,7 +33,8 @@ public:
     TVariableExtValue(const T &_value) : value(_value) {}
     TVariableExtValue(T &&_value) : value(std::move(_value)) {}
 
-    virtual std::string TypeName() const { return "TVariableExtValue"; }
+    virtual std::string TypeName() const override { return "TVariableExtValue"; }
+    virtual size_t Size() const override { return sizeof(T); };
 
     T &Get() { return value; }
     const T &Get() const { return value; }
@@ -61,7 +64,7 @@ public:
                     }
                     else
                     {
-                        varValue = static_cast<size_t>(value);
+                        varValue = static_cast<uint64_t>(value);
                         varType = TVariableType::vtUInt;
                     }
                 }
@@ -81,20 +84,27 @@ public:
     TVariable &operator=(TVariable &&oth);
 
     TVariableType Type() const;
+    size_t Size() const;
 
     std::string TypeName() const;
 
     int64_t ToInt() const;
+    uint64_t ToUInt() const;
     double ToDouble() const;
     bool ToBool() const;
     std::string ToString() const;
 
+    std::vector<uint8_t> ToData() const;
+
     operator int64_t() const { return ToInt(); }
-    operator int() const { return static_cast<int>(ToInt()); }
+    operator uint64_t() const { return ToUInt(); }
+    operator int32_t() const { return static_cast<int32_t>(ToInt()); }
+    operator uint32_t() const { return static_cast<uint32_t>(ToUInt()); }
     operator double() const { return ToDouble(); }
     operator bool() const { return ToBool(); }
     operator std::string() const { return ToString(); }
 
+    static TVariable FromData(const TVariableType& type, void* data, const size_t& count);
     template<typename T>
     T ToType() const//вариант приведения когда мы точно знаем что там лежит
     {

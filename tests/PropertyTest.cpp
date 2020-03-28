@@ -260,41 +260,51 @@ TEST(PropertyTest, Serialization)
     a.AddChild(childInher);
     a.AddChild(std::make_shared<TPropertyClass>())->SetName("childProp");
 
+    TVecString fileNames = {"a.xml", "a.bin"};
+    bool IsSaveTo[2] = {true, false};
+    for(size_t i = 0; i < static_cast<size_t >(TSerializationKind::skCount); i++)
+    {
+        TSerialization ser(static_cast<TSerializationKind>(i));
+        if(IsSaveTo[i])
+        {
+            TString data = ser.SaveTo(a);
+            EXPECT_FALSE(data.empty());
 
-    TString xml = TSerialization().SaveTo(a);
-    EXPECT_FALSE(xml.empty());
-    EXPECT_TRUE(TSerialization().SaveToFile("a.xml", a));
+            TPropertyInher b;
+            EXPECT_TRUE(ser.LoadFrom(b, data));
 
-    TPropertyInher b;
-    TPropertyInher c;
-    EXPECT_TRUE(TSerialization().LoadFrom(b, xml));
-    EXPECT_TRUE(TSerialization().LoadFromFile("a.xml", c));
+            EXPECT_EQ(b.Name(), TString("Var a"));
+            EXPECT_EQ(b.IntVar(), 10);
+            EXPECT_EQ(b.StringVar(), TString("hello"));
+            EXPECT_EQ(b.BoolVar(), true);
+            EXPECT_EQ(b.DoubleVar(), 4.5678);
+            EXPECT_EQ(b.ClassVar()->Name(), TString("classVarName"));
+            EXPECT_EQ(b.ClassVar2()->Name(), TString("classVar2Name"));
+            EXPECT_EQ(b.ClassVar2()->IntVar2(), 30);
+            ASSERT_EQ(b.CountChilds(), 2);
+            EXPECT_EQ(b.Child(0)->Name(), TString("childInher"));
+            EXPECT_EQ(b.Child(0)->ReadProperty("intVar2").ToInt(), 80);
+            EXPECT_EQ(b.Child(1)->Name(), TString("childProp"));
+        }
 
-    EXPECT_EQ(b.Name(), TString("Var a"));
-    EXPECT_EQ(b.IntVar(), 10);
-    EXPECT_EQ(b.StringVar(), TString("hello"));
-    EXPECT_EQ(b.BoolVar(), true);
-    EXPECT_EQ(b.DoubleVar(), 4.5678);
-    EXPECT_EQ(b.ClassVar()->Name(), TString("classVarName"));
-    EXPECT_EQ(b.ClassVar2()->Name(), TString("classVar2Name"));
-    EXPECT_EQ(b.ClassVar2()->IntVar2(), 30);
-    ASSERT_EQ(b.CountChilds(), 2);
-    EXPECT_EQ(b.Child(0)->Name(), TString("childInher"));
-    EXPECT_EQ(b.Child(0)->ReadProperty("intVar2").ToInt(), 80);
-    EXPECT_EQ(b.Child(1)->Name(), TString("childProp"));
+        EXPECT_TRUE(ser.SaveToFile(fileNames[i], a));
 
-    EXPECT_EQ(c.Name(), TString("Var a"));
-    EXPECT_EQ(c.IntVar(), 10);
-    EXPECT_EQ(c.StringVar(), TString("hello"));
-    EXPECT_EQ(c.BoolVar(), true);
-    EXPECT_EQ(c.DoubleVar(), 4.5678);
-    EXPECT_EQ(c.ClassVar()->Name(), TString("classVarName"));
-    EXPECT_EQ(c.ClassVar2()->Name(), TString("classVar2Name"));
-    EXPECT_EQ(c.ClassVar2()->IntVar2(), 30);
-    ASSERT_EQ(c.CountChilds(), 2);
-    EXPECT_EQ(c.Child(0)->Name(), TString("childInher"));
-    EXPECT_EQ(c.Child(0)->ReadProperty("intVar2").ToInt(), 80);
-    EXPECT_EQ(c.Child(1)->Name(), TString("childProp"));
+        TPropertyInher c;
+        EXPECT_TRUE(ser.LoadFromFile(fileNames[i], c));
+
+        EXPECT_EQ(c.Name(), TString("Var a"));
+        EXPECT_EQ(c.IntVar(), 10);
+        EXPECT_EQ(c.StringVar(), TString("hello"));
+        EXPECT_EQ(c.BoolVar(), true);
+        EXPECT_EQ(c.DoubleVar(), 4.5678);
+        EXPECT_EQ(c.ClassVar()->Name(), TString("classVarName"));
+        EXPECT_EQ(c.ClassVar2()->Name(), TString("classVar2Name"));
+        EXPECT_EQ(c.ClassVar2()->IntVar2(), 30);
+        ASSERT_EQ(c.CountChilds(), 2);
+        EXPECT_EQ(c.Child(0)->Name(), TString("childInher"));
+        EXPECT_EQ(c.Child(0)->ReadProperty("intVar2").ToInt(), 80);
+        EXPECT_EQ(c.Child(1)->Name(), TString("childProp"));
+    }
 }
 
 TEST(PropertyTest, Manager)

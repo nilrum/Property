@@ -19,10 +19,13 @@ public:
     virtual bool LoadFromFile(TString path, TPropertyClass &value) const = 0;
 };
 
+enum class TSerializationKind{skXml = 0, skBin, skCount};
+
 class TSerialization : public TSerializationInterf
 {
 public:
     TSerialization();
+    TSerialization(TSerializationKind kind);
 
     TString SaveTo(const TPropertyClass &value) const override;
 
@@ -34,6 +37,7 @@ public:
 
 protected:
     std::shared_ptr<TSerializationInterf> impl;
+    static std::shared_ptr<TSerializationInterf> SerFromKind(TSerializationKind kind);
 };
 
 

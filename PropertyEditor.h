@@ -58,6 +58,9 @@ public:
     }
 };
 
+class TObjTree;
+using TFunUpdateTree = std::function<void(TObjTree* value)>;
+
 class TObjTree{
 public:
     TObjTree(const TPtrPropertyClass& value = TPtrPropertyClass(), TObjTree* parent = nullptr, int indProp = -1);
@@ -73,6 +76,7 @@ public:
     bool IsLoaded() const;
     bool IsChilds() const;//отображает может ли быть объекты в childs
     bool IsProp() const;  //отображает это свойство или класс
+    bool IsCheckable() const;
 
     size_t CountProps() const;
     TObjTree& Prop(int index);
@@ -85,6 +89,7 @@ public:
     void DelChild(TPtrPropertyClass value, int indProp);
 
     int LoadedCount();
+    int LoadedCountAll();
 
     TString Name() const;
     TVariable Value(bool isType = true) const;
@@ -97,15 +102,26 @@ public:
     using TVectArrayInfo = std::vector<TArrayInfo>;
     TVectArrayInfo ArrayInfo() const;//возвращает список свойств массивов и их номера
 
+    bool IsChecked() const;
+    void SetIsChecked(bool value);
+    void SetFunChecked(TChangeThePropertyClass value);
+    void SetFunUpdateTree(TFunUpdateTree value);
     using TVecObjTree = TPtrVector<TObjTree>;
 private:
     TObjTree* parent = nullptr;
+    int idChange = -1;
+    TFunUpdateTree update;
     TPtrPropertyClass obj;
     int indProp = -1;
+
+    void CallUpdate();
+    TFunUpdateTree GetFunUpdate();
 
     TVecObjTree props;
     TVecObjTree childs;
     bool isLoaded = false;
+    TChangeThePropertyClass funChecked;
+    TChangeThePropertyClass FindFunChecked() const;
 
     bool HasChild(const TVariable& value) const;
     bool HasChild(const TPtrPropertyClass& value) const;
@@ -143,12 +159,6 @@ protected:
     bool isEdit = true;
     TObjTree tree;
 };
-
-/*class TEditorView : public TViewBase{
-public:
-    virtual TRezult ShowFor(TPtrPropertyClass value){ return TRezult(); };
-    PROPERTIES(TEditorView, TViewBase,)
-};*/
 
 
 #endif //TESTAPP_PROPERTYEDITOR_H

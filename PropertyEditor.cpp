@@ -71,6 +71,7 @@ void TObjTree::Clear()
 {
     ClearChilds();
     props.clear();
+    if(obj != nullptr) obj->DelOnChange(idChange);
     obj.reset();
 }
 
@@ -83,7 +84,9 @@ void TObjTree::ClearChilds()
 void TObjTree::SetObj(const TPtrPropertyClass& value)
 {
     obj = value;
-    if(static_cast<bool>(obj) == false || IsProp()) return;
+    if(obj == nullptr || IsProp()) return;
+    obj->DelOnChange(idChange);
+    idChange = obj->AddOnChange([this](){ CallUpdate(); });
     const TPropertyManager& man = value->Manager();
     for(int i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив
@@ -228,7 +231,6 @@ bool TObjTree::IsProp() const
     return indProp != -1 && parent && parent->Obj()->Manager().Property(indProp).IsPod();
 }
 
-
 bool TObjTree::CheckProp(const TPropInfo& value) const
 {
     return true;
@@ -299,6 +301,71 @@ TObjTree::TVectArrayInfo TObjTree::ArrayInfo() const
     return rez;
 }
 
+bool TObjTree::IsCheckable() const
+{
+    return IsProp() == false && obj->IndexProperty("isUsed") != -1;
+}
+
+bool TObjTree::IsChecked() const
+{
+    int index = obj->IndexProperty("isUsed");
+    if(index == -1) return false;
+    return obj->ReadProperty(index).ToBool();
+}
+
+void TObjTree::SetIsChecked(bool value)
+{
+    int index = obj->IndexProperty("isUsed");
+    if(index == -1) return;
+    obj->WriteProperty(index, value);
+    TChangeThePropertyClass fun = FindFunChecked();
+    if(fun)
+    {
+        TString fullName = obj->Name();
+        TObjTree* p = parent;
+        while(p != nullptr)
+        {
+            fullName = p->obj->Name() + "/" + fullName;
+            p = p->Parent();
+        }
+        fun((value) ? obj : TPtrPropertyClass(), fullName);
+    }
+}
+
+void TObjTree::SetFunChecked(TChangeThePropertyClass value)
+{
+    funChecked = value;
+}
+
+TChangeThePropertyClass TObjTree::FindFunChecked() const
+{
+    if(funChecked) return funChecked;
+    else if(parent) return parent->FindFunChecked();
+
+    return TChangeThePropertyClass();
+}
+
+int TObjTree::LoadedCountAll()
+{
+    return LoadedCount() + CountChilds();
+}
+
+void TObjTree::SetFunUpdateTree(TFunUpdateTree value)
+{
+    update = value;
+}
+
+void TObjTree::CallUpdate()
+{
+    TFunUpdateTree call = GetFunUpdate();
+    if(call) call(this);
+}
+
+TFunUpdateTree TObjTree::GetFunUpdate()
+{
+    if(parent != nullptr) return parent->GetFunUpdate();
+    return update;
+}
 
 
 

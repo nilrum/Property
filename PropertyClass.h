@@ -19,12 +19,15 @@
 class TPropertyClass;
 
 using TPtrPropertyClass = std::shared_ptr<TPropertyClass>;
+using TWPtrPropertyClass = std::weak_ptr<TPropertyClass>;
 using TGetFun = std::function<TVariable(const TPropertyClass *)>;
 using TSetFun = std::function<void(TPropertyClass *, const TVariable &)>;
 using TGetIndFun = std::function<TVariable(const TPropertyClass *, int)>;
 using TChangePropertyClass = std::function<void()>;
+using TChangeThePropertyClass = std::function<void(TPtrPropertyClass value, const TString& fullName)>;
 
 #include "PropertyClass.hpp"
+
 
 struct TPropInfo{
 private:
@@ -118,6 +121,7 @@ public:
 
     inline bool IsStorable() const { return IsValid() && isStoring && get; }
     inline bool IsLoadable() const { return IsValid() && isLoading && set; }
+    inline bool IsReadLoadable() const { return IsValid() && isLoading && get; }
 
     inline bool IsReadOnly() const { return static_cast<bool>(set) == false; }
 
@@ -193,9 +197,10 @@ private:
     bool CheckSet(int index) const;
 };
 
-class TPropertyClass{
+class TPropertyClass{//: public std::enable_shared_from_this<TPropertyClass>{
 protected:
     TString name;
+    //TListFun<TChangePropertyClass> change;
     TChangePropertyClass change;
 public:
     PROPERTIES_BASE(TPropertyClass)
@@ -231,7 +236,55 @@ public:
     void DelFromArray(const TString &nameProperty, const TVariable &value);
 
     void Change();//оповестить тех кто подписан что объект изменился
-    void SetOnChange(const TChangePropertyClass& value);
+    int AddOnChange(const TChangePropertyClass& value);
+    void DelOnChange(int id);
+};
+
+
+class TCommunicClass{
+private:
+    TWPtrPropertyClass commun;
+public:
+    using TRegVector = std::vector<TWPtrPropertyClass>;
+    void CommunReg(const TWPtrPropertyClass& value)
+    {
+        commun = value;
+        Append(commun);
+    }
+
+    virtual ~TCommunicClass()
+    {
+        Remove(std::move(commun));
+    }
+    static TPtrPropertyClass Find(const TString& name)
+    {
+        for(auto v : Commun())
+        {
+            TPtrPropertyClass ptr = v.lock();
+            if (ptr && ptr->Name() == name) return ptr;
+        }
+        return TPtrPropertyClass();
+    }
+
+    static TRegVector& Commun()
+    {
+        static TRegVector vec;
+        return vec;
+    };
+
+    static void Append(const TWPtrPropertyClass& value)
+    {
+        Commun().emplace_back(value);
+    }
+    static void Remove(TWPtrPropertyClass&& value)
+    {
+        for(auto it = Commun().begin(); it != Commun().end(); it++)
+            if(it->owner_before(value) == false && value.owner_before(*it) == false)
+            {
+                Commun().erase(it);
+                break;
+            }
+    }
 };
 
 template<typename T>
@@ -267,5 +320,39 @@ inline TPtrPropertyClass SafePtrInterf(TPropertyClass* value)
 {
     return TPtrPropertyClass{value, [](TPropertyClass*){/*No deleter*/}};
 }
+
+class TEnum{
+public:
+    using TEnumMap = std::map<TString, TVecString>;
+
+    static bool Register(const TString& type, const TString& values)
+    {
+        return Register(type, SplitTrim(values, ','));
+    }
+
+    static bool Register(const TString& type, const TVecString& values)
+    {
+        TEnumMap::const_iterator it = Enums().find(type);
+        if(it != Enums().end()) return true;
+        Enums()[type] = values;
+        return true;
+    }
+
+    static const TVecString& EnumItems(const TString& type)
+    {
+        TEnumMap::const_iterator it = Enums().find(type);
+        if(it != Enums().end()) return it->second;
+        return Single<TVecString>();
+    }
+private:
+    STATIC(TEnumMap, Enums);
+};
+
+#define ENUM_NAMES(NAME, ...)\
+	namespace{ const bool b_##NAME = TEnum::Register(#NAME, #__VA_ARGS__); };
+
+#define ENUM(NAME, ...)\
+	enum NAME { __VA_ARGS__}; \
+	ENUM_NAMES(NAME, __VA_ARGS__)
 
 #endif //TESTAPP_PROPERTYCLASS_H
