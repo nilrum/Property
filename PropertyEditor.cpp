@@ -71,7 +71,7 @@ void TObjTree::Clear()
 {
     ClearChilds();
     props.clear();
-    if(obj != nullptr) obj->DelOnChange(idChange);
+    idChange.disconnect();
     obj.reset();
 }
 
@@ -85,8 +85,7 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
 {
     obj = value;
     if(obj == nullptr || IsProp()) return;
-    obj->DelOnChange(idChange);
-    idChange = obj->AddOnChange([this](){ CallUpdate(); });
+    idChange = obj->OnChange().connect([this](){ CallUpdate(); });
     const TPropertyManager& man = value->Manager();
     for(int i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив

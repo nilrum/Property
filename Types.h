@@ -13,6 +13,7 @@
 using TString = std::string;
 using TVecString = std::vector<TString>;
 using TVecDouble = std::vector<double>;
+using TVecUInt = std::vector<uint32_t>;
 
 template<class T>
 T &Single()
@@ -68,7 +69,7 @@ std::vector<T> SplitTrim(const T& value, typename T::value_type delim)
     return rez;
 }
 
-class [[nodiscard]] TRezult{
+class /* [[nodiscard]]*/ TRezult{
 public:
     TRezult():info(typeid(int)){};
     TRezult(int value):code(value), info(typeid(int)){}

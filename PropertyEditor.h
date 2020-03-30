@@ -109,9 +109,9 @@ public:
     using TVecObjTree = TPtrVector<TObjTree>;
 private:
     TObjTree* parent = nullptr;
-    int idChange = -1;
     TFunUpdateTree update;
     TPtrPropertyClass obj;
+    TIdChange idChange;
     int indProp = -1;
 
     void CallUpdate();

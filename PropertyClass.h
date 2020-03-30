@@ -9,6 +9,7 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <sigslot/signal.hpp>
 #include "Variable.h"
 #include "Types.h"
 
@@ -23,7 +24,9 @@ using TWPtrPropertyClass = std::weak_ptr<TPropertyClass>;
 using TGetFun = std::function<TVariable(const TPropertyClass *)>;
 using TSetFun = std::function<void(TPropertyClass *, const TVariable &)>;
 using TGetIndFun = std::function<TVariable(const TPropertyClass *, int)>;
-using TChangePropertyClass = std::function<void()>;
+//using TChangePropertyClass = std::function<void()>;
+using TChangePropertyClass = sigslot::signal<>;
+using TIdChange = sigslot::scoped_connection;
 using TChangeThePropertyClass = std::function<void(TPtrPropertyClass value, const TString& fullName)>;
 
 #include "PropertyClass.hpp"
@@ -197,10 +200,11 @@ private:
     bool CheckSet(int index) const;
 };
 
+#include <sigslot/signal.hpp>
+
 class TPropertyClass{//: public std::enable_shared_from_this<TPropertyClass>{
 protected:
     TString name;
-    //TListFun<TChangePropertyClass> change;
     TChangePropertyClass change;
 public:
     PROPERTIES_BASE(TPropertyClass)
@@ -236,8 +240,7 @@ public:
     void DelFromArray(const TString &nameProperty, const TVariable &value);
 
     void Change();//оповестить тех кто подписан что объект изменился
-    int AddOnChange(const TChangePropertyClass& value);
-    void DelOnChange(int id);
+    TChangePropertyClass& OnChange();
 };
 
 

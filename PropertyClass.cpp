@@ -276,19 +276,11 @@ void TPropertyClass::DelFromArray(const TString &nameProperty, const TVariable &
 
 void TPropertyClass::Change()
 {
-    if(change) change();
+    change();
 }
 
-int TPropertyClass::AddOnChange(const TChangePropertyClass &value)
+TChangePropertyClass &TPropertyClass::OnChange()
 {
-    //return change.Add(value);
-    change = value;
+    return change;
 }
-
-void TPropertyClass::DelOnChange(int id)
-{
-    //change.Del(id);
-    change = TChangePropertyClass();
-}
-
 
