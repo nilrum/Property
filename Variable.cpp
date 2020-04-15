@@ -58,6 +58,8 @@ std::string TVariable::TypeName() const
             return "double";
         case TVariableType::vtStr:
             return "string";
+        case TVariableType::vtEnum:
+            return "enum";
         case TVariableType::vtExt:
             return std::any_cast<TPtrVariableExt>(varValue)->TypeName();
         default:
@@ -82,6 +84,8 @@ int64_t TVariable::ToInt() const
                 return static_cast<int64_t >(std::any_cast<double>(varValue));
             case TVariableType::vtStr:
                 return std::stoll(std::any_cast<std::string>(varValue));
+            case TVariableType::vtEnum:
+                return std::any_cast<TPtrVariableExt>(varValue)->ToInt();
         }
     }
     catch (std::invalid_argument)
@@ -105,6 +109,8 @@ uint64_t TVariable::ToUInt() const
                 return static_cast<uint64_t >(std::any_cast<double>(varValue));
             case TVariableType::vtStr:
                 return std::stoll(std::any_cast<std::string>(varValue));
+            case TVariableType::vtEnum:
+                return std::any_cast<TPtrVariableExt>(varValue)->ToInt();
         }
     }
     catch (std::invalid_argument)
@@ -128,6 +134,8 @@ double TVariable::ToDouble() const
                 return std::any_cast<double>(varValue);
             case TVariableType::vtStr:
                 return std::stod(std::any_cast<std::string>(varValue));
+            case TVariableType::vtEnum:
+                return static_cast<double >(std::any_cast<TPtrVariableExt>(varValue)->ToInt());
         }
     }
     catch (std::invalid_argument)
@@ -139,8 +147,8 @@ bool TVariable::ToBool() const
 {
     if(varType == TVariableType::vtStr)
     {
-        std::string v = std::any_cast<std::string>(varValue);
-        return v.size() != 0 && v != "false" && v != "0";
+        auto v = std::any_cast<std::string>(varValue);
+        return v.empty() == false && v != "false" && v != "0";
     }
     else
         return ToDouble() != 0.0;
@@ -160,6 +168,8 @@ std::string TVariable::ToString() const
             return std::to_string(std::any_cast<double>(varValue));
         case TVariableType::vtStr:
             return std::any_cast<std::string>(varValue);
+        case TVariableType::vtEnum:
+            return std::any_cast<TPtrVariableExt>(varValue)->ToString();
         default:
             return std::string();
     }
@@ -169,6 +179,7 @@ TVariable TVariable::FromData(const TVariableType &type, void *data, const size_
 {
     switch (type)
     {
+        case TVariableType::vtEnum:
         case TVariableType::vtInt:
         {
             int64_t value = 0;
@@ -177,7 +188,7 @@ TVariable TVariable::FromData(const TVariableType &type, void *data, const size_
         }
         case TVariableType::vtUInt:
         {
-            int64_t value = 0;
+            uint64_t value = 0;
             memcpy(&value, data, count);
             return TVariable(value);
         }
@@ -192,6 +203,7 @@ TVariable TVariable::FromData(const TVariableType &type, void *data, const size_
             std::string value((char*)data, count);
             return TVariable(value);
         }
+
         default:
             return TVariable();
     }
@@ -206,6 +218,7 @@ size_t TVariable::Size() const
         case TVariableType::vtUInt: return sizeof(size_t);
         case TVariableType::vtDouble: return sizeof(double);
         case TVariableType::vtStr: return std::any_cast<std::string>(varValue).size();
+        case TVariableType::vtEnum: return std::any_cast<TPtrVariableExt>(varValue)->Size();
         case TVariableType::vtExt: return std::any_cast<TPtrVariableExt>(varValue)->Size();
     }
 }
@@ -216,6 +229,7 @@ std::vector<uint8_t> TVariable::ToData() const
     {
         case TVariableType::vtNone: return std::vector<uint8_t>();
         case TVariableType::vtInt:
+        case TVariableType::vtEnum:
         {
             int64_t value = ToInt();
             std::vector<uint8_t> rez(sizeof(int64_t));
@@ -247,4 +261,18 @@ std::vector<uint8_t> TVariable::ToData() const
     }
 }
 
+TPtrVariableExt TVariable::GetExt() const
+{
+    if(varType != TVariableType::vtExt && varType != TVariableType::vtEnum) return TPtrVariableExt();
+    return std::any_cast<TPtrVariableExt>(varValue);
+}
 
+
+std::vector<std::string> EnumNamesFromVariable(const TVariable &value)
+{
+    TPtrVariableExt ext = value.GetExt();
+    if(ext == nullptr) return {};
+    TEnumInterf* intrf = dynamic_cast<TEnumInterf*>(ext.get());
+    if(intrf == nullptr) return {};
+    return intrf->EnumNames();
+}

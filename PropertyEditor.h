@@ -77,6 +77,8 @@ public:
     bool IsChilds() const;//отображает может ли быть объекты в childs
     bool IsProp() const;  //отображает это свойство или класс
     bool IsCheckable() const;
+    bool IsColor() const;
+    bool IsEnum() const;
 
     size_t CountProps() const;
     TObjTree& Prop(int index);
@@ -104,7 +106,7 @@ public:
 
     bool IsChecked() const;
     void SetIsChecked(bool value);
-    void SetFunChecked(TChangeThePropertyClass value);
+    //void SetFunChecked(TChangeThePropertyClass value);
     void SetFunUpdateTree(TFunUpdateTree value);
     using TVecObjTree = TPtrVector<TObjTree>;
 private:

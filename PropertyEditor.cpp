@@ -230,6 +230,18 @@ bool TObjTree::IsProp() const
     return indProp != -1 && parent && parent->Obj()->Manager().Property(indProp).IsPod();
 }
 
+bool TObjTree::IsColor() const
+{
+    return IsProp() && parent->Obj()->Manager().Property(indProp).Type() == "TColor";
+}
+
+bool TObjTree::IsEnum() const
+{
+    return false;
+}
+
+
+
 bool TObjTree::CheckProp(const TPropInfo& value) const
 {
     return true;
@@ -317,7 +329,7 @@ void TObjTree::SetIsChecked(bool value)
     int index = obj->IndexProperty("isUsed");
     if(index == -1) return;
     obj->WriteProperty(index, value);
-    TChangeThePropertyClass fun = FindFunChecked();
+    /*TChangeThePropertyClass fun = FindFunChecked();//TODO Remove this
     if(fun)
     {
         TString fullName = obj->Name();
@@ -328,13 +340,13 @@ void TObjTree::SetIsChecked(bool value)
             p = p->Parent();
         }
         fun((value) ? obj : TPtrPropertyClass(), fullName);
-    }
+    }*/
 }
 
-void TObjTree::SetFunChecked(TChangeThePropertyClass value)
+/*void TObjTree::SetFunChecked(TChangeThePropertyClass value)
 {
     funChecked = value;
-}
+}*/
 
 TChangeThePropertyClass TObjTree::FindFunChecked() const
 {
@@ -365,7 +377,6 @@ TFunUpdateTree TObjTree::GetFunUpdate()
     if(parent != nullptr) return parent->GetFunUpdate();
     return update;
 }
-
 
 
 

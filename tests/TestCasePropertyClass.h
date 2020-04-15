@@ -19,6 +19,8 @@ private:
 
 using TPtrPropertyInher2 = std::shared_ptr<TPropertyInher2>;
 
+ENUM(TTestEnumInher, teOne, teTwo, teThree)
+
 class TPropertyInher : public TPropertyClass{
 public:
     int IntVar() const{ return intVar; };
@@ -48,9 +50,9 @@ public:
             }
     }
 
-
     PROPERTY_FUN(bool, boolVar, BoolVar, SetBoolVar);
     PROPERTY_FUN(double, doubleVar, DoubleVar, SetDoubleVar);
+    PROPERTY_FUN(TTestEnumInher, enumVar, EnumVar, SetEnumVar);
     PROPERTY_FUN(TPtrPropertyInher2, classVar2, ClassVar2, SetClassVar2);
 
     PROPERTIES(TPropertyInher, TPropertyClass,
@@ -61,6 +63,7 @@ public:
            PROPERTY(TPropertyClass, classVar, ClassVar, SetClassVar);
            PROPERTY(TPropertyInher2, classVar2, ClassVar2, SetClassVar2);
            PROPERTY_ARRAY(TPropertyClass, childs, CountChilds, Child, AddChild, DelChild);
+           PROPERTY(TTestEnumInher, enumVar, EnumVar, SetEnumVar);
     )
 
 private:
@@ -68,6 +71,7 @@ private:
     TString stringVar;
     bool boolVar = false;
     double doubleVar = 0.;
+    TTestEnumInher enumVar = teOne;
     TPtrPropertyClass classVar = std::make_shared<TPropertyClass>();
     std::shared_ptr<TPropertyInher2> classVar2 = std::make_shared<TPropertyInher2>();
     std::vector<TPtrPropertyClass> childs;

@@ -172,7 +172,7 @@ void TPropertyManager::AddChildManager(TPropertyManager *value)
 }
 
 //TPropertyClass
-bool TPropertyClass::InitProperties()
+bool TPropertyClass::InitProperties() noexcept
 {
     if (ManagerStatic().IsInit()) return true;
     PROPERTY(TString, name, Name, SetName);

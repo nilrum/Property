@@ -9,12 +9,14 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <typeinfo>
 
 using TString = std::string;
 using TVecString = std::vector<TString>;
 using TVecDouble = std::vector<double>;
 using TVecUInt = std::vector<uint32_t>;
 
+#define STR(VAL) (VAL).c_str()
 template<class T>
 T &Single()
 {
@@ -29,6 +31,9 @@ T &Single(T&& value)
     o = std::move(value);
     return o;
 }
+
+#define STATIC_ARG(TYPE, NAME, ...) static TYPE& NAME(){ static TYPE value(__VA_ARGS__); return value; };
+#define STATIC(TYPE, NAME) static TYPE& NAME(){ static TYPE value; return value; };
 
 template<typename T>
     std::vector<T> Split(const T& value, typename T::value_type delim)
@@ -71,9 +76,11 @@ std::vector<T> SplitTrim(const T& value, typename T::value_type delim)
 
 class /* [[nodiscard]]*/ TRezult{
 public:
-    TRezult():info(typeid(int)){};
-    TRezult(int value):code(value), info(typeid(int)){}
-    template <typename T> TRezult(const T& value):code(static_cast<int>(value)), info(typeid(T)){}
+    TRezult():info(&typeid(int)){};
+    TRezult(int value):code(value), info(&typeid(int)){}
+    template <typename T> TRezult(const T& value):code(static_cast<int>(value)), info(&typeid(T)){}
+    TRezult(const TRezult& oth):code(oth.code), info(oth.info){};
+    void operator =(const TRezult& oth){ code = oth.code; info = oth.info; }
 
     enum TDefault{Cancel = -1, Ok = 0};
 
@@ -81,10 +88,10 @@ public:
     inline bool IsError() const { return code != Ok; }
     inline bool IsCancel() const { return code == Cancel; }
     template<typename T>
-        inline bool Is(const T& value) { return static_cast<T>(code) == value && info == typeid(T); }
+        inline bool Is(const T& value) { return static_cast<T>(code) == value && *info == typeid(T); }
 
     inline int Code() const { return code; }
-    inline const std::type_info& Info() const { return info; };
+    inline const std::type_info& Info() const { return *info; };
 
     static bool Register(const std::type_info& info, int code, const TString& text)
     {
@@ -110,7 +117,7 @@ public:
     static TMapEnums& Enums() { static TMapEnums enums; return enums; }
 private:
     int code = Ok;
-    const std::type_info& info;
+    const std::type_info* info;
 
 };
 

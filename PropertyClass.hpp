@@ -14,7 +14,7 @@ T VariableToPropertyClassImpl(const TVariable &value)
 template<typename T>
 struct TIsClass{
     using TCheck = typename std::decay<T>::type;
-    static const bool value = !(std::is_arithmetic<TCheck>::value || std::is_same<TCheck, TString>::value || std::is_same<TCheck, char*>::value);
+    static const bool value = !(std::is_arithmetic<TCheck>::value || std::is_enum<TCheck>::value || std::is_same<TCheck, TString>::value || std::is_same<TCheck, char*>::value);
 };
 
 template<typename T, typename R>
@@ -80,7 +80,16 @@ TSetFun SetFun(R (T::*method)(P))
 {
     return [method](TPropertyClass *ptr, const TVariable &value) {
         T *obj = dynamic_cast<T *>(ptr);
-        if (obj) (obj->*method)(value);
+        using TBase = std::remove_reference_t<std::remove_const_t<P>>;
+        if constexpr( std::is_enum_v<TBase> == false )
+        {
+            if (obj) (obj->*method)(value);
+        }
+        else
+        {
+            if (obj) (obj->*method)(value.ToEnum<TBase>());
+        }
+
     };
 }
 //вариант для вызова с индексом по умолчанию
@@ -103,10 +112,6 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
     };
 }
 
-
-#define STATIC_ARG(TYPE, NAME, ...) static TYPE& NAME(){ static TYPE value(__VA_ARGS__); return value; };
-#define STATIC(TYPE, NAME) static TYPE& NAME(){ static TYPE value; return value; };
-
 #define PROPERTIES_BASE_CHK(TYPE, CREATE, CHECK)\
     public:\
         STATIC_ARG(TPropertyManager, ManagerStatic, #TYPE, CREATE)\
@@ -121,7 +126,7 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
 
 #define PROPERTIES_CREATE(TYPE, BASE, CREATE, ...)\
     PROPERTIES_BASE_CHK(TYPE, CREATE, override)\
-    static bool InitProperties(){\
+    static bool InitProperties() noexcept{\
         if(TYPE::ManagerStatic().IsInit()) return true;\
         BASE::InitProperties();\
         TYPE::ManagerStatic().AppendProperties(BASE::ManagerStatic());\
@@ -150,10 +155,17 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
 #define PROPERTY_FUN_IMPL(TYPE, NAME, GET, SET, OTHER)\
     public:\
         TYPE GET() const { return NAME; };\
-        TYPENAME& SET(const TYPE& value) { NAME = value; OTHER; return *this; }
+        TYPENAME& SET(const TYPE& value) { bool chg = NAME != value; NAME = value; if(chg) { OTHER; } return *this; }
 
-#define PROPERTY_FUN(TYPE, NAME, GET, SET) PROPERTY_FUN_IMPL(TYPE, NAME, GET, SET, )
-#define PROPERTY_FUN_CHG(TYPE, NAME, GET, SET) PROPERTY_FUN_IMPL(TYPE, NAME, GET, SET, Change())
+#define PROPERTY_FUN(TYPE, NAME, GET, SET)\
+    public:\
+        TYPE GET() const { return NAME; };\
+        TYPENAME& SET(const TYPE& value) { NAME = value; return *this; }
+
+#define PROPERTY_FUN_CHG(TYPE, NAME, GET, SET)\
+    public:\
+        TYPE GET() const { return NAME; };\
+        TYPENAME& SET(const TYPE& value) { bool chg = NAME != value; NAME = value; if(chg) Change(); return *this; }
 
 #define PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
     public:\
@@ -162,8 +174,9 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
 
 #define PROPERTY_ARRAY_ADD_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, OTHER)\
         PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
-        const TYPE& ADD(TYPE&& value){ NAME.push_back(value); OTHER; return NAME.back(); }\
-        const TYPE& ADD(const TYPE& value){ NAME.push_back(value); OTHER; return NAME.back(); }
+        TYPE& ADD(const TYPE& value){ NAME.push_back(value); OTHER; return NAME.back(); }
+
+        //const TYPE& ADD(TYPE&& value){ NAME.push_back(value); OTHER; return NAME.back(); }\
 
 #define PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL, OTHER)\
     PROPERTY_ARRAY_ADD_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, OTHER)\

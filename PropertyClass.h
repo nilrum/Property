@@ -24,7 +24,6 @@ using TWPtrPropertyClass = std::weak_ptr<TPropertyClass>;
 using TGetFun = std::function<TVariable(const TPropertyClass *)>;
 using TSetFun = std::function<void(TPropertyClass *, const TVariable &)>;
 using TGetIndFun = std::function<TVariable(const TPropertyClass *, int)>;
-//using TChangePropertyClass = std::function<void()>;
 using TChangePropertyClass = sigslot::signal<>;
 using TIdChange = sigslot::scoped_connection;
 using TChangeThePropertyClass = std::function<void(TPtrPropertyClass value, const TString& fullName)>;
@@ -202,13 +201,13 @@ private:
 
 #include <sigslot/signal.hpp>
 
-class TPropertyClass{//: public std::enable_shared_from_this<TPropertyClass>{
+class TPropertyClass: public std::enable_shared_from_this<TPropertyClass>{
 protected:
     TString name;
     TChangePropertyClass change;
 public:
     PROPERTIES_BASE(TPropertyClass)
-    static bool InitProperties();
+    static bool InitProperties() noexcept;
     static TPtrPropertyClass CreateFromType(const TString &type);
 
     virtual ~TPropertyClass() = default;
@@ -249,6 +248,8 @@ private:
     TWPtrPropertyClass commun;
 public:
     using TRegVector = std::vector<TWPtrPropertyClass>;
+    using TFunCreate = std::function<void(const TString& name)>;
+    using TRegForCreate = std::map<TString, TFunCreate>;
     void CommunReg(const TWPtrPropertyClass& value)
     {
         commun = value;
@@ -259,21 +260,31 @@ public:
     {
         Remove(std::move(commun));
     }
-    static TPtrPropertyClass Find(const TString& name)
+
+    virtual TPtrPropertyClass FindInCommunic(const TString& value){ return TPtrPropertyClass(); }
+
+    static TPtrPropertyClass FindCommun(const TString& name, bool autoCreate = false)
     {
         for(auto v : Commun())
         {
             TPtrPropertyClass ptr = v.lock();
             if (ptr && ptr->Name() == name) return ptr;
         }
+        if(autoCreate)
+        {
+            CreateReg(name);
+            return FindCommun(name, false);
+        }
         return TPtrPropertyClass();
     }
-
-    static TRegVector& Commun()
+    static void CreateReg(const TString& name)
     {
-        static TRegVector vec;
-        return vec;
-    };
+        auto it = ForCreate().find(name);
+        if(it != ForCreate().end())
+            it->second(name);
+    }
+    STATIC(TRegVector, Commun);
+    STATIC(TRegForCreate, ForCreate);
 
     static void Append(const TWPtrPropertyClass& value)
     {
@@ -289,6 +300,8 @@ public:
             }
     }
 };
+
+using TPtrCommunicClass = std::shared_ptr<TCommunicClass>;
 
 template<typename T>
 TVariable PropertyClassToVariable(const std::shared_ptr<T> &value)
@@ -324,38 +337,5 @@ inline TPtrPropertyClass SafePtrInterf(TPropertyClass* value)
     return TPtrPropertyClass{value, [](TPropertyClass*){/*No deleter*/}};
 }
 
-class TEnum{
-public:
-    using TEnumMap = std::map<TString, TVecString>;
-
-    static bool Register(const TString& type, const TString& values)
-    {
-        return Register(type, SplitTrim(values, ','));
-    }
-
-    static bool Register(const TString& type, const TVecString& values)
-    {
-        TEnumMap::const_iterator it = Enums().find(type);
-        if(it != Enums().end()) return true;
-        Enums()[type] = values;
-        return true;
-    }
-
-    static const TVecString& EnumItems(const TString& type)
-    {
-        TEnumMap::const_iterator it = Enums().find(type);
-        if(it != Enums().end()) return it->second;
-        return Single<TVecString>();
-    }
-private:
-    STATIC(TEnumMap, Enums);
-};
-
-#define ENUM_NAMES(NAME, ...)\
-	namespace{ const bool b_##NAME = TEnum::Register(#NAME, #__VA_ARGS__); };
-
-#define ENUM(NAME, ...)\
-	enum NAME { __VA_ARGS__}; \
-	ENUM_NAMES(NAME, __VA_ARGS__)
 
 #endif //TESTAPP_PROPERTYCLASS_H

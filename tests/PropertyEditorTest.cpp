@@ -63,14 +63,14 @@ TEST(TestPropertyEditor, TestSetObjectNoObjects)
     obj3->SetClassVar(TPtrPropertyClass());
     obj3->SetClassVar2(TPtrPropertyInher2());
 
-    EXPECT_EQ(tree.CountProps(), 5);
+    EXPECT_EQ(tree.CountProps(), 6);
     EXPECT_EQ(tree.IsLoaded(), false);//объекты не загружены
     EXPECT_EQ(tree.IsChilds(), false);//объекты свойтсва есть но объектов в них нету
     EXPECT_EQ(tree.CountChilds(), 0);
 
     tree.Load();
 
-    EXPECT_EQ(tree.CountProps(), 5);
+    EXPECT_EQ(tree.CountProps(), 6);
     EXPECT_TRUE(tree.IsLoaded());//объекты загружены
     EXPECT_FALSE(tree.IsChilds());//объекты свойтсва есть но объектов в них нету
     EXPECT_EQ(tree.CountChilds(), 0);
@@ -83,14 +83,14 @@ TEST(TestPropertyEditor, TestSetObject)
     edit.SetObject(obj);
     TObjTree &tree = edit.Tree();
 
-    EXPECT_EQ(tree.CountProps(), 5);
+    EXPECT_EQ(tree.CountProps(), 6);
     EXPECT_EQ(tree.IsLoaded(), false);//объекты не загружены
     EXPECT_EQ(tree.IsChilds(), true);//объекты свойтсва есть и объекты есть
     EXPECT_EQ(tree.CountChilds(), 0);//но они пока не загружены
 
     edit.Tree().Load();
 
-    EXPECT_EQ(tree.CountProps(), 5);
+    EXPECT_EQ(tree.CountProps(), 6);
     EXPECT_EQ(tree.IsLoaded(), true);//объекты загружены
     EXPECT_EQ(tree.IsChilds(), true);//объекты свойтсва есть
     EXPECT_EQ(tree.CountChilds(), 2);

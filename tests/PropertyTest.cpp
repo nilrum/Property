@@ -108,7 +108,7 @@ TEST(PropertyTest, TPropertyInher)
 
     EXPECT_EQ(a.TypeClass(), TString("TPropertyInher"));
 
-    EXPECT_EQ(a.CountProperty(), 8);
+    EXPECT_EQ(a.CountProperty(), 9);
 
     EXPECT_EQ(a.IndexProperty("name"), 0);
     EXPECT_EQ(a.IndexProperty("intVar"), 1);
@@ -118,6 +118,7 @@ TEST(PropertyTest, TPropertyInher)
     EXPECT_EQ(a.IndexProperty("classVar"), 5);
     EXPECT_EQ(a.IndexProperty("classVar2"), 6);
     EXPECT_EQ(a.IndexProperty("childs"), 7);
+    EXPECT_EQ(a.IndexProperty("enumVar"), 8);
     EXPECT_EQ(a.IndexProperty("notFind"), -1);
 
     EXPECT_EQ(a.ReadProperty(0).ToString(), TString("nameValue"));
@@ -166,6 +167,25 @@ TEST(PropertyTest, TPropertyInher)
     EXPECT_EQ(doubleVar, 5.6789);
     a.WriteProperty("doubleVar", TVariable(7.8901));
     EXPECT_EQ(a.ReadProperty("doubleVar").ToDouble(), 7.8901);
+
+    //enum
+    a.WriteProperty(8, TVariable(teTwo));
+    EXPECT_EQ(a.ReadProperty(8).ToEnum<TTestEnumInher>(), teTwo);
+
+    TTestEnumInher enumVar = a.ReadProperty(8).ToEnum<TTestEnumInher>();
+    EXPECT_EQ(enumVar, teTwo);
+
+    TString enumStr = a.ReadProperty(8);
+    EXPECT_EQ(enumStr, "teTwo");
+
+    a.WriteProperty("enumVar", TVariable(teThree));
+    EXPECT_EQ(a.ReadProperty("enumVar").ToEnum<TTestEnumInher>(), teThree);
+
+    a.WriteProperty("enumVar", TVariable(0));
+    EXPECT_EQ(a.ReadProperty("enumVar").ToEnum<TTestEnumInher>(), teOne);
+
+    a.WriteProperty("enumVar", TVariable("teTwo"));
+    EXPECT_EQ(a.ReadProperty("enumVar").ToEnum<TTestEnumInher>(), teTwo);
 
     //class TPropertyClass
     TPtrPropertyClass var = a.ReadProperty(5).ToType<TPtrPropertyClass>();
