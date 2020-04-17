@@ -176,7 +176,6 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
         PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
         TYPE& ADD(const TYPE& value){ NAME.push_back(value); OTHER; return NAME.back(); }
 
-        //const TYPE& ADD(TYPE&& value){ NAME.push_back(value); OTHER; return NAME.back(); }\
 
 #define PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL, OTHER)\
     PROPERTY_ARRAY_ADD_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, OTHER)\

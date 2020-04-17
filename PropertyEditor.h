@@ -8,56 +8,6 @@
 #include <deque>
 #include "PropertyClass.h"
 
-template<class T>
-class TPtrVector{
-private:
-    std::vector<T*> data;
-public:
-    using value_type = T;
-    using iterator = typename std::vector<T*>::iterator;
-    ~TPtrVector()
-    {
-        clear();
-    }
-
-    T& operator[] (int index){ return *data[index]; }
-    const T& operator[] (int index) const { return *data[index]; }
-    size_t size() const { return data.size(); }
-
-    void push_back(T* value)
-    {
-        data.push_back(value);
-    }
-    template<typename... Args>
-    void emplace_back(Args&&... args)
-    {
-        data.push_back(new T(args...));
-    }
-    void clear()
-    {
-        for(int i = 0; i < data.size(); i++)
-            delete data[i];
-        data.clear();
-    }
-
-    iterator begin()
-    {
-        return data.begin();
-    }
-
-    iterator end()
-    {
-        return data.end();
-    }
-
-    void erase(iterator value)
-    {
-        T* val = *value;
-        data.erase(value);
-        delete val;
-    }
-};
-
 class TObjTree;
 using TFunUpdateTree = std::function<void(TObjTree* value)>;
 
@@ -113,7 +63,7 @@ private:
     TObjTree* parent = nullptr;
     TFunUpdateTree update;
     TPtrPropertyClass obj;
-    TIdChange idChange;
+    TIdConnect idChange;
     int indProp = -1;
 
     void CallUpdate();

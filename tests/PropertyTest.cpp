@@ -291,7 +291,7 @@ TEST(PropertyTest, Serialization)
             EXPECT_FALSE(data.empty());
 
             TPropertyInher b;
-            EXPECT_TRUE(ser.LoadFrom(b, data));
+            EXPECT_TRUE(ser.LoadFrom(data, b));
 
             EXPECT_EQ(b.Name(), TString("Var a"));
             EXPECT_EQ(b.IntVar(), 10);
@@ -324,6 +324,19 @@ TEST(PropertyTest, Serialization)
         EXPECT_EQ(c.Child(0)->Name(), TString("childInher"));
         EXPECT_EQ(c.Child(0)->ReadProperty("intVar2").ToInt(), 80);
         EXPECT_EQ(c.Child(1)->Name(), TString("childProp"));
+
+        if(IsSaveTo[i])
+        {
+            EXPECT_TRUE(ser.SavePropToFileName("prop_" + fileNames[i], a, "childs"));
+
+            TPropertyInher d;
+            EXPECT_TRUE(ser.LoadPropFromFileName("prop_" + fileNames[i], d, "childs"));
+
+            ASSERT_EQ(d.CountChilds(), 2);
+            EXPECT_EQ(d.Child(0)->Name(), TString("childInher"));
+            EXPECT_EQ(d.Child(0)->ReadProperty("intVar2").ToInt(), 80);
+            EXPECT_EQ(d.Child(1)->Name(), TString("childProp"));
+        }
     }
 }
 

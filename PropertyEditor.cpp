@@ -358,7 +358,7 @@ TChangeThePropertyClass TObjTree::FindFunChecked() const
 
 int TObjTree::LoadedCountAll()
 {
-    return LoadedCount() + CountChilds();
+    return CountProps() + LoadedCount();
 }
 
 void TObjTree::SetFunUpdateTree(TFunUpdateTree value)

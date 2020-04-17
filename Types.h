@@ -148,37 +148,59 @@ bool RemoveValFor(TVec& vec, const typename TVec::value_type& val)
     return false;
 }
 
-//TODO сделать общий вариант работы
+template<class T>
+class TPtrVector{
+private:
+    std::vector<T*> data;
+public:
+    using value_type = T;
+    using iterator = typename std::vector<T*>::iterator;
+    ~TPtrVector()
+    {
+        clear();
+    }
 
-template<typename T>
-struct TListFun{
-    using TFuns = std::map<int, T>;
-    TFuns funs;
-    int last = 0;
-    inline explicit operator bool() const
+    T& operator[] (int index){ return *data[index]; }
+    const T& operator[] (int index) const { return *data[index]; }
+    size_t size() const { return data.size(); }
+
+    void push_back(T* value)
     {
-        return funs.size();
+        data.push_back(value);
     }
-    inline void operator ()()
+    template<typename... Args>
+    void emplace_back(Args&&... args)
     {
-        Call();
+        data.push_back(new T(args...));
     }
-    int Add(const T& value)
+    void clear()
     {
-        funs[last] = value;
-        return last++;
+        for(int i = 0; i < data.size(); i++)
+            delete data[i];
+        data.clear();
     }
-    void Del(int id)
+
+    iterator begin()
     {
-        typename TFuns::const_iterator it = funs.find(id);
-        if(it != funs.end())
-            funs.erase(it);
+        return data.begin();
     }
-    inline void Call()
+
+    iterator end()
     {
-        TFuns temp = funs;
-        for(typename TFuns::const_iterator it = temp.begin(); it != temp.end(); it++)
-            it->second();
+        return data.end();
+    }
+
+    void erase(iterator value)
+    {
+        T* val = *value;
+        data.erase(value);
+        delete val;
+    }
+    void erase(iterator b, iterator e)
+    {
+        for(iterator it = b; it != e; it++)
+            delete (*it);
+        data.erase(b, e);
     }
 };
 #endif //TESTAPP_TYPES_H
