@@ -16,111 +16,167 @@
 #else*/
 
 #include "Types.h"
-class TEnum{
-public:
-    struct TEnumInfo{
-        TVecString names;
-        TVecDouble values;
-        bool isValid;
-        int Index(double value) const
-        {
-            for(size_t i = 0; i < values.size(); i++)
-                if(values[i] == value) return i;
-            return -1;
-        }
-        TString NameFromValue(double value) const
-        {
-            int index = Index(value);
-            if(index != -1) return names[index];
-            else return TString();
-        }
-    };
-    using TEnumMap = std::map<TString, TEnumInfo>;
-    using TEnumMapType = std::map<const std::type_info*, TString>;
-    static bool Register(const TString& type, const std::type_info& inf, const TString& names, const TVecDouble& values = TVecDouble())
-    {
-        return Register(type, inf, SplitTrim(names, ','), values);
-    }
 
-    static bool Register(const TString& type, const std::type_info& inf, const TVecString& names, const TVecDouble& values = TVecDouble())
-    {
-        TEnumMap::const_iterator it = Enums().find(type);
-        if(it != Enums().end()) return true;
-        Enums()[type] = {names, values, true};
-        EnumsIds()[&inf] = type;
-        return true;
-    }
+class TEnum;
 
-    static const TVecString& EnumItems(const std::type_info& inf)
-    {
-        TEnumMapType::const_iterator it = EnumsIds().find(&inf);
-        if(it != EnumsIds().end()) return EnumNames(it->second);
-        return Single<TVecString>();
-    }
-
-    static const TVecString& EnumNames(const TString& type)
-    {
-        TEnumMap::const_iterator it = Enums().find(type);
-        if(it != Enums().end()) return it->second.names;
-        return Single<TVecString>();
-    }
-
-    static const TVecDouble& EnumValues(const TString& type)
-    {
-        TEnumMap::const_iterator it = Enums().find(type);
-        if(it != Enums().end()) return it->second.values;
-        return Single<TVecDouble>();
-    }
-
-    static const TEnumInfo& EnumInfo(const TString& type)
-    {
-        TEnumMap::const_iterator it = Enums().find(type);
-        if(it != Enums().end()) return it->second;
-        return Single<TEnumInfo>();
-    }
-
-    static const TEnumInfo& EnumInfo(const std::type_info& inf)
-    {
-        TEnumMapType::const_iterator it = EnumsIds().find(&inf);
-        if(it != EnumsIds().end()) return EnumInfo(it->second);
-        return Single<TEnumInfo>({TVecString(), TVecDouble(), false});
-    }
-
-    static int EnumIndexFromValue(const TString& type, double value)
-    {
-        return EnumInfo(type).Index(value);
-    }
+class TEnumInfo {
 private:
-    STATIC(TEnumMap, Enums);
-    STATIC(TEnumMapType, EnumsIds);
+    TString typeEnum;
+    const std::type_info *info;
+    TVecString names;       //название элементов множества
+    TVecDouble values;      //возможное значение элемента
+    bool isValid;           //валидная ли информация
+    int convCat = 0;
+    int convFrom = 0;
+    using TVecEnum = std::vector<TEnumInfo>;
+    using TMapInfo = std::map<const std::type_info *, int>;
+    using TMapType = std::map<TString, int>;
+
+    STATIC(TVecEnum, Enums);
+    STATIC(TMapInfo, EnumsInfos);
+    STATIC(TMapType, EnumsTypes);
+public:
+    TEnumInfo() : info(nullptr), isValid(false){};
+
+    TEnumInfo(const TString& type, const std::type_info *inf, const TVecString &ns, const TVecDouble &vs = TVecDouble()) :
+           typeEnum(type), info(inf), names(ns), values(vs), isValid(true){};
+
+    const TString& TypeEnum() const { return typeEnum; }
+    const TVecString &Names() const { return names; }
+    const TVecDouble &Values() const { return values; }
+    const std::type_info &Info() const { return *info; }
+
+    inline TString Name(int index) const
+    {
+        if (index >= 0 && index < names.size()) return names[index];
+        return TString();
+    }
+
+    inline double Value(int index) const
+    {
+        if (index >= 0 && index < values.size()) return values[index];
+        return 0.;
+    }
+
+    int IndexFromName(const TString &name) const
+    {
+        for (size_t i = 0; i < names.size(); i++)
+            if (names[i] == name) return i;
+        return -1;
+    }
+
+    int IndexFromValue(double value) const  //возвращает номер по порядкук по значению
+    {
+        for (size_t i = 0; i < values.size(); i++)
+            if (values[i] == value) return i;
+        return -1;
+    }
+
+    inline TString NameFromValue(double value) const
+    {
+        int index = IndexFromValue(value);
+        return Name(index);
+    }
+
+    inline double ValueFromName(TString name) const
+    {
+        int index = IndexFromName(name);
+        return Value(index);
+    }
+
+    inline bool IsValid() const { return isValid; }
+
+    inline void ConvertInfo(int cat, int from)
+    {
+        convCat = cat;
+        convFrom = from;
+    }
+
+    inline int ConvertCategory() const { return convCat; }
+    inline int ConvertFrom() const { return convFrom; }
+
+    TEnum FromIndex(int index) const;
+    TEnum FromValue(double value) const;
+
+    static bool Register(const TString &type, const std::type_info &inf, const TVecString &names,
+                         const TVecDouble &values = TVecDouble(), int cat = 0, int from = 0);
+
+    static bool Register(const TString &type, const std::type_info &inf, const TString &names,
+                         const TVecDouble &values = TVecDouble(), int cat = 0, int from = 0);
+
+    static const TEnumInfo &EnumInfo(const std::type_info &inf);
+
+    static const TEnumInfo &EnumInfo(const TString &type);
 };
 
 template <typename T>
-    double EnumVal(int index)
+const TString& TypeEnum()
+{
+    return TEnumInfo::EnumInfo(typeid(T)).TypeEnum();
+}
+template <typename T>
+double EnumValue(int index)
+{
+    return TEnumInfo::EnumInfo(typeid(T)).Value(index);
+}
+
+template <typename T>
+TString EnumName(int index)
+{
+    return TEnumInfo::EnumInfo(typeid(T)).Name(index);
+}
+
+template <typename T>
+TString EnumName(const T& index)
+{
+    return TEnumInfo::EnumInfo(typeid(T)).Name(static_cast<int>(index));
+}
+
+class TEnum{
+private:
+    const std::type_info* info = nullptr;
+    int64_t index = 0;
+    friend TEnumInfo;
+    TEnum(const std::type_info* inf, int64_t ind):info(inf), index(ind){}
+public:
+    TEnum(){}
+    template <typename T, typename = std::enable_if_t<std::is_enum_v<T>>>
+        TEnum(const T& value)
     {
-        const TEnum::TEnumInfo& inf = TEnum::EnumInfo(typeid(T));
-        if(index < inf.values.size()) return inf.values[index];
-        return 0;
+        index = static_cast<int64_t>(value);
+        info = &typeid(T);
     }
 
+    bool IsValid() const { return info != nullptr; }
+    int64_t Index() const { return index; }
+    const std::type_info& Info() const { return *info; }
+    TString Name() const { return TEnumInfo::EnumInfo(*info).Name(index); }
+    const TVecString& Names() const { return TEnumInfo::EnumInfo(*info).Names(); }
+};
+
+
 #define ENUM_NAMES(NAME, ...)\
-	namespace{ const bool b_##NAME = TEnum::Register(#NAME, typeid(NAME), #__VA_ARGS__); };
+	namespace{ const bool b_##NAME = TEnumInfo::Register(#NAME, typeid(NAME), #__VA_ARGS__); };
 
 
 #define ENUM(NAME, ...)\
-	enum NAME { __VA_ARGS__}; \
+	enum NAME { __VA_ARGS__ }; \
 	ENUM_NAMES(NAME, __VA_ARGS__)
 
 #define ENUM_CLASS(NAME, ...)\
 	enum class NAME { __VA_ARGS__}; \
 	ENUM_NAMES(NAME, __VA_ARGS__)
 
-#define ENUM_VALS(NAME, NAMES, VALS)\
-    enum class NAME { NAMES }; \
-	namespace{ const bool b_##NAME = TEnum::Register(#NAME, typeid(NAME), TEXT_EN(NAMES), { VALS }); };
+
+#define ENUM_VALS_CONV(NAME, CAT, FROM, NAMES, VALS)\
+    enum NAME { NAMES }; \
+	namespace{ const bool b_##NAME = TEnumInfo::Register(#NAME, typeid(NAME), TEXT_EN(NAMES), { VALS }, CAT, FROM); };
+
+#define ENUM_VALS(NAME, NAMES, VALS) \
+    enum NAME { NAMES }; \
+	namespace{ const bool b_##NAME = TEnumInfo::Register(#NAME, typeid(NAME), TEXT_EN(NAMES), { VALS }); };
 
 #define VAR(...) __VA_ARGS__
 #define TEXT_EN(...) #__VA_ARGS__
 
-//#endif
 #endif //NEO_ENUMINFO_H

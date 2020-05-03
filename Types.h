@@ -10,11 +10,14 @@
 #include <map>
 #include <algorithm>
 #include <typeinfo>
+#include <math.h>
 
 using TString = std::string;
 using TVecString = std::vector<TString>;
 using TVecDouble = std::vector<double>;
-using TVecUInt = std::vector<uint32_t>;
+using TVecUInt = std::vector<size_t>;
+using TVecInt = std::vector<int>;
+using TVecBool = std::vector<bool>;
 
 #define STR(VAL) (VAL).c_str()
 template<class T>
@@ -74,13 +77,13 @@ std::vector<T> SplitTrim(const T& value, typename T::value_type delim)
     return rez;
 }
 
-class /* [[nodiscard]]*/ TRezult{
+class /* [[nodiscard]]*/ TResult{
 public:
-    TRezult():info(&typeid(int)){};
-    TRezult(int value):code(value), info(&typeid(int)){}
-    template <typename T> TRezult(const T& value):code(static_cast<int>(value)), info(&typeid(T)){}
-    TRezult(const TRezult& oth):code(oth.code), info(oth.info){};
-    void operator =(const TRezult& oth){ code = oth.code; info = oth.info; }
+    TResult():info(&typeid(int)){};
+    TResult(int value):code(value), info(&typeid(int)){}
+    template <typename T> TResult(const T& value):code(static_cast<int>(value)), info(&typeid(T)){}
+    TResult(const TResult& oth):code(oth.code), info(oth.info){};
+    void operator =(const TResult& oth){ code = oth.code; info = oth.info; }
 
     enum TDefault{Cancel = -1, Ok = 0};
 
@@ -99,7 +102,7 @@ public:
        return true;
     }
 
-    static TString TextError(const TRezult& value)
+    static TString TextError(const TResult& value)
     {
         TMapEnums::iterator it = Enums().find(value.Info().name());
         if(it != Enums().end())
@@ -123,7 +126,7 @@ private:
 
 #define REGISTER_CODES(TYPE, CODE, TEXT)\
     namespace{\
-        const bool r##CODE = TRezult::Register(typeid(TYPE), static_cast<int>(TYPE::CODE), TEXT);\
+        const bool r##CODE = TResult::Register(typeid(TYPE), static_cast<int>(TYPE::CODE), TEXT);\
     }
 
 
@@ -202,5 +205,55 @@ public:
             delete (*it);
         data.erase(b, e);
     }
+};
+
+struct TDoubleCheck{
+    static bool Equal(const double& one, const double& two)
+    {
+        return fabs(one - two) < 0.00001;
+    }
+
+    static bool Less(const double& one, const double& two)
+    {
+        return two - one > 0.00001;
+    }
+
+    static bool LessEq(const double& one, const double& two)
+    {
+        return Less(one, two) || Equal(one, two);
+    }
+
+    static bool Great(const double& one, const double& two)
+    {
+        return one - two > 0.00001;
+    }
+
+    static bool GreatEq(const double& one, const double& two)
+    {
+        return Great(one, two) || Equal(one, two);
+    }
+
+    struct TDoubleLess : public std::binary_function<double, double, bool>
+    {
+        bool operator()(const double& x, const double& y) const
+        { return Less(x, y); }
+    };
+
+    struct TDoubleLessEq : public std::binary_function<double, double, bool>
+    {
+        bool operator()(const double& x, const double& y) const
+        { return LessEq(x, y); }
+    };
+
+    struct TDoubleGreater : public std::binary_function<double, double, bool>
+    {
+        bool operator()(const double& x, const double& y) const
+        { return Great(x, y); }
+    };
+    struct TDoubleGreaterEq : public std::binary_function<double, double, bool>
+    {
+        bool operator()(const double& x, const double& y) const
+        { return GreatEq(x, y); }
+    };
 };
 #endif //TESTAPP_TYPES_H

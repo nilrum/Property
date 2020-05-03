@@ -18,8 +18,8 @@ if(NOT EXISTS ${SIGSLOT_DIR})
     message("Added SIGSLOT_DIR = [${SIGSLOT_DIR}]")
 endif()
 
-set(PROPERTY_HDR Types.h Variable.h PropertyClass.h PropertyClass.hpp Serialization.h PropertyEditor.h EnumInfo.h)
-set(PROPERTY_SRC Variable.cpp PropertyClass.cpp Serialization.cpp PropertyEditor.cpp ${PUGI_DIR}/src/pugixml.cpp)
+set(PROPERTY_HDR Types.h Variable.h PropertyClass.h PropertyClass.hpp Serialization.h PropertyEditor.h EnumInfo.h GlobalCustom.h)
+set(PROPERTY_SRC Variable.cpp PropertyClass.cpp Serialization.cpp PropertyEditor.cpp ${PUGI_DIR}/src/pugixml.cpp EnumInfo.cpp GlobalCustom.cpp)
 
 if(NOT TARGET Property)
     #add_definitions("-DMAGIC_ENUM_NO_CHECK_SUPPORT")

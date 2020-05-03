@@ -45,6 +45,7 @@ private:
     bool isLoading = true;
 
     bool isClass = false;
+    bool isCheckName = false;
 public:
     TPropInfo() = default;
 
@@ -112,24 +113,33 @@ public:
         isLoading = value;
         return *this;
     }
+
     TPropInfo &NoSerialization()
     {
         isLoading = isStoring = false;
         return *this;
     }
 
+    TPropInfo &SetCheckName(bool value)
+    {
+        isCheckName = value;
+        return *this;
+    }
+
 
     inline bool IsValid() const { return name.size() && get; }
-
-    inline bool IsStorable() const { return IsValid() && isStoring && get; }
-    inline bool IsLoadable() const { return IsValid() && isLoading && set; }
-    inline bool IsReadLoadable() const { return IsValid() && isLoading && get; }
 
     inline bool IsReadOnly() const { return static_cast<bool>(set) == false; }
 
     inline bool IsPod() const { return !isClass; }
     inline bool IsClass() const { return isClass && !IsArray(); }
     inline bool IsArray() const { return static_cast<bool>(getArray); }
+
+    inline bool IsStorable(bool always = false) const { return IsValid() && ( always || isStoring); }
+    inline bool IsLoadable(bool always = false) const { return IsValid() && set && ( always || isLoading); }
+    inline bool IsReadLoadable(bool always = false) const { return IsValid() && ( always || isLoading); }
+
+    inline bool IsCheckName() const { return isCheckName; }
 };
 
 class TPropertyManager
@@ -243,6 +253,7 @@ public:
 };
 
 
+
 class TCommunicClass{
 private:
     TWPtrPropertyClass commun;
@@ -336,6 +347,15 @@ inline TPtrPropertyClass SafePtrInterf(TPropertyClass* value)
 {
     return TPtrPropertyClass{value, [](TPropertyClass*){/*No deleter*/}};
 }
+
+template <typename T>
+    std::vector<T> ListProps(const TPtrPropertyClass& value, const TString& listProp, const TString& valProp)
+    {
+        //int intList = value->IndexProperty(listProp);
+
+    }
+
+TVecString ListNames(const TPtrPropertyClass& value, const TString& listProp);
 
 
 #endif //TESTAPP_PROPERTYCLASS_H

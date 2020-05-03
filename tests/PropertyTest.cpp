@@ -419,3 +419,161 @@ TEST(PropertyTest, Manager)
     EXPECT_EQ(infoArray.IsArray(), true);
 }
 
+class TPropertyClass2;
+
+class TPropertyManager2{
+public:
+    TPropertyManager2() = default;
+    TPropertyManager2(const TPropertyManager2& oth) = default;
+    TPropertyManager2(TPropertyManager2&& oth) = default;
+
+    TString Type() const { return type; }
+
+    virtual TVariable ReadProperty(int index, const TPropertyClass2* obj) const = 0;
+    virtual void WriteProperty(int index, TPropertyClass *obj, const TVariable &value) const = 0;
+
+protected:
+    TString type;
+    int countBase = 0;
+    std::vector<TPropInfo> infos;
+};
+
+class TPropertyClass2 : public std::enable_shared_from_this<TPropertyClass2>{
+public:
+    class TPropertyManager_TPropertyClass : public TPropertyManager2{
+    public:
+        TPropertyManager_TPropertyClass()
+        {
+            type = "TPropertyClass";
+            infos = { TPropInfo("name", "TString", false) };
+        }
+        virtual TVariable ReadProperty(int index, const TPropertyClass2* obj) const
+        {
+            if(index == 0) return obj->Name();
+            return TVariable();
+        }
+        virtual void WriteProperty(int index, TPropertyClass *obj, const TVariable &value) const
+        {
+            if(index == 0) obj->SetName(value);
+        }
+    };
+    static TPropertyManager2& ManagerStatic() noexcept
+    {
+        static TPropertyManager_TPropertyClass manager;
+        return manager;
+    }
+
+    virtual const TPropertyManager2& Manager() const
+    {
+        return ManagerStatic();
+    }
+
+    TVariable ReadProperty(int index) const
+    {
+        return Manager().ReadProperty(index, this);
+    }
+
+    TString Name() const { return name; }
+    void SetName(const TString& value) { name = value; }
+private:
+    TString name;
+};
+
+class TPropertyInherNew : public TPropertyClass2{
+public:
+    class TPropertyManager_TPropertyInherNew : public TPropertyClass2::TPropertyManager_TPropertyClass {
+    public:
+        using TBase = TPropertyClass2::TPropertyManager_TPropertyClass;
+        TPropertyManager_TPropertyInherNew():TBase()
+        {
+            type = "TPropertyInherNew";
+            countBase = infos.size();
+            infos.push_back(TPropInfo("intVar2", "int", false));
+        }
+
+        virtual TVariable ReadProperty(int index, const TPropertyClass2* obj) const
+        {
+            if(index >= countBase)
+            {
+                const TPropertyInherNew *objType = dynamic_cast<const TPropertyInherNew *>(obj);
+                return objType->IntVar2();
+            }
+            return TBase::ReadProperty(index, obj);
+        }
+        virtual void WriteProperty(int index, TPropertyClass *obj, const TVariable &value) const
+        {
+            if(index >= countBase)
+            {
+                TPropertyInherNew *objType = dynamic_cast<TPropertyInherNew *>(obj);
+                objType->SetIntVar2(value);
+            }
+            else
+                TBase::WriteProperty(index, obj, value);
+        }
+    };
+
+    static TPropertyManager_TPropertyInherNew& ManagerStatic() noexcept
+    {
+        static TPropertyManager_TPropertyInherNew manager;
+        return manager;
+    }
+
+    virtual const TPropertyManager2& Manager() const
+    {
+        return ManagerStatic();
+    }
+
+    int IntVar2() const { return intVar2; }
+    void SetIntVar2(int value) { intVar2 = value; }
+protected:
+    int intVar2 = 0;
+};
+
+
+TEST(TestSpeed, ReadPropertyesRaw)
+{
+    TPropertyInher2 obj;
+    obj.SetName("Hello world");
+    obj.SetIntVar2(10);
+
+    EXPECT_EQ(obj.ReadProperty(1).ToInt(), 10);
+    EXPECT_EQ(obj.ReadProperty(0).ToString(), TString("Hello world"));
+
+    for(int i = 0; i < 1000000; i++)
+    {
+        int intValue = TVariable(obj.IntVar2());
+        TString strValue = TVariable(obj.Name());
+    }
+}
+
+TEST(TestSpeed, ReadPropertyesDef)
+{
+    TPropertyInher2 obj;
+    obj.SetName("Hello world");
+    obj.SetIntVar2(10);
+
+    EXPECT_EQ(obj.ReadProperty(1).ToInt(), 10);
+    EXPECT_EQ(obj.ReadProperty(0).ToString(), TString("Hello world"));
+
+    for(int i = 0; i < 1000000; i++)
+    {
+        int intValue = obj.ReadProperty(1);
+        TString strValue = obj.ReadProperty(0);
+    }
+}
+
+TEST(TestSpeed, ReadPropertyesNew)
+{
+    TPropertyInherNew obj;
+    obj.SetName("Hello world");
+    obj.SetIntVar2(10);
+
+    EXPECT_EQ(obj.ReadProperty(1).ToInt(), 10);
+    EXPECT_EQ(obj.ReadProperty(0).ToString(), TString("Hello world"));
+
+    for(int i = 0; i < 1000000; i++)
+    {
+        int intValue = obj.ReadProperty(1);
+        TString strValue = obj.ReadProperty(0);
+    }
+}

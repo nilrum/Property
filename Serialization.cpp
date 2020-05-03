@@ -24,7 +24,8 @@ protected:
     bool Load(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
 
     void SaveList(const TPropertyClass *obj, pugi::xml_node &node, const TPropInfo &prop) const;
-    void LoadList(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop) const;
+    void LoadList(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
+    void LoadListCheck(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
 };
 
 
@@ -134,11 +135,11 @@ bool TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node, co
     TString kind = node.attribute("kind").value();
     if (kind == "class")
     {
-        if(prop.IsReadLoadable() == false && isLoad == false) return false;
+        if(prop.IsReadLoadable(isLoad) == false) return false;
         TPtrPropertyClass ptr = VariableToPropClass(prop.CallGet(obj));
         if (ptr == nullptr)
         {
-            if(prop.IsLoadable() == false && isLoad == false) return false;
+            if(prop.IsLoadable(isLoad) == false) return false;
             ptr = TPropertyClass::CreateFromType(node.attribute("type").as_string());
             prop.CallSet(obj, PropertyClassToVariable(ptr));
         }
@@ -146,8 +147,11 @@ bool TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node, co
     }
     else if (kind == "list")
     {
-        if (prop.IsLoadable() == false && isLoad == false) return false;
-        LoadList(obj, node, prop);
+        if (prop.IsReadLoadable(isLoad) == false) return false;
+        if(prop.IsCheckName())
+            LoadListCheck(obj, node, prop, isLoad);
+        else
+            LoadList(obj, node, prop, isLoad);
     } else
     {
         if (prop.IsLoadable() == false && isLoad == false) return false;
@@ -155,7 +159,7 @@ bool TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node, co
     }
     return true;
 }
-void TSerializationXml::LoadList(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop) const
+void TSerializationXml::LoadList(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad) const
 {
     int num = 0;
     TPtrPropertyClass ptr;
@@ -165,6 +169,7 @@ void TSerializationXml::LoadList(TPropertyClass *obj, const pugi::xml_node &node
         int64_t count = prop.CallGetCountArray(obj);
         if (num >= count)
         {
+            if(prop.IsLoadable(isLoad) == false) continue;
             ptr = TPropertyClass::CreateFromType(child.attribute("type").value());
             if(ptr) prop.CallAddArray(obj, PropertyClassToVariable(ptr));
         }
@@ -174,6 +179,29 @@ void TSerializationXml::LoadList(TPropertyClass *obj, const pugi::xml_node &node
 
         Load(ptr.get(), child);
         num++;
+    }
+}
+
+void TSerializationXml::LoadListCheck(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop,
+                                      bool isLoad) const
+{
+    TPtrPropertyClass ptr;
+    int64_t count = prop.CallGetCountArray(obj);
+    for (int64_t i = 0; i < count; i++)
+    {
+        ptr = VariableToPropClass(prop.CallGetArray(obj, i));
+        if(ptr == nullptr) continue;
+        for (auto it = node.begin(); it != node.end(); it++)
+        {
+            pugi::xml_node child = *it;
+            //child.find_child_by_attribute()
+            const pugi::char_t *name = child.first_child().attribute("value").value();
+            if(name == ptr->Name())
+            {
+                Load(ptr.get(), child);
+                break;
+            }
+        }
     }
 }
 

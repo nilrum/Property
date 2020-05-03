@@ -284,3 +284,11 @@ TChangePropertyClass &TPropertyClass::OnChange()
     return change;
 }
 
+TVecString ListNames(const TPtrPropertyClass &value, const TString &listProp)
+{
+    int index = value->IndexProperty(listProp);
+    TVecString res(value->CountInArray(index));
+    for(int i = 0; i < res.size(); i++)
+        res[i] = VariableToPropClass(value->ReadFromArray(index, i))->Name();
+    return res;
+}

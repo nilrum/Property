@@ -171,15 +171,10 @@ const TObjTree &TObjTree::Child(int index) const
 void TObjTree::AddChild(TPtrPropertyClass value, int indProp)
 {
     obj->AddToArray(indProp, PropertyClassToVariable(value));
-    childs.emplace_back(value, this, indProp);
 }
 
 void TObjTree::DelChild(TPtrPropertyClass value, int indProp)
 {
-    childs.erase(
-            std::find_if(childs.begin(), childs.end(),
-                    [value](const TObjTree* it) -> bool { return it->Obj() == value; }
-                    ));
     obj->DelFromArray(indProp, PropertyClassToVariable(value));
 }
 
