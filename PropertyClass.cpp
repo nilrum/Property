@@ -113,7 +113,7 @@ bool TPropertyManager::CheckSet(int index) const
     return CheckIndex(index) && properties[index].IsValid() && properties[index].IsReadOnly() == false;
 }
 
-int64_t TPropertyManager::ReadCountInArray(int index, const TPropertyClass *obj) const
+int TPropertyManager::ReadCountInArray(int index, const TPropertyClass *obj) const
 {
     if (CheckGet(index) && properties[index].IsArray())
         return properties[index].CallGetCountArray(obj);
@@ -234,12 +234,12 @@ void TPropertyClass::WriteProperty(const TString &nameProperty, const TVariable 
     WriteProperty(Manager().IndexProperty(nameProperty), value);
 }
 
-int64_t TPropertyClass::CountInArray(int index) const
+int TPropertyClass::CountInArray(int index) const
 {
     return Manager().ReadCountInArray(index, this);
 }
 
-int64_t TPropertyClass::CountInArray(const TString &nameProperty) const
+int TPropertyClass::CountInArray(const TString &nameProperty) const
 {
     return CountInArray(Manager().IndexProperty(nameProperty));
 }
@@ -288,7 +288,7 @@ TVecString ListNames(const TPtrPropertyClass &value, const TString &listProp)
 {
     int index = value->IndexProperty(listProp);
     TVecString res(value->CountInArray(index));
-    for(int i = 0; i < res.size(); i++)
+    for(size_t i = 0; i < res.size(); i++)
         res[i] = VariableToPropClass(value->ReadFromArray(index, i))->Name();
     return res;
 }

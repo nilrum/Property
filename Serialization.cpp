@@ -186,8 +186,8 @@ void TSerializationXml::LoadListCheck(TPropertyClass *obj, const pugi::xml_node 
                                       bool isLoad) const
 {
     TPtrPropertyClass ptr;
-    int64_t count = prop.CallGetCountArray(obj);
-    for (int64_t i = 0; i < count; i++)
+    int count = prop.CallGetCountArray(obj);
+    for (int i = 0; i < count; i++)
     {
         ptr = VariableToPropClass(prop.CallGetArray(obj, i));
         if(ptr == nullptr) continue;
@@ -238,8 +238,8 @@ protected:
         TString name;
         TString type;
         TKindBin kind;
-        size_t count;
-        size_t size;
+        int count;
+        int64_t size;
 
         template <typename T>
         void Write(FILE* file, T& value)
@@ -361,9 +361,9 @@ void TSerializationBin::Save(const TPropertyClass *obj, FILE* file, const TStrin
     fpos_t posFinish = 0;
     std::fgetpos(file, &posFinish);//сохраняем позицию для расчета рамзмера
     node.size = posFinish - posCalc;
-    std::fseek(file, posStart, SEEK_SET);//переходим в начало для перезаписи
+    std::fseek(file, long(posStart), SEEK_SET);//переходим в начало для перезаписи
     node.WriteNode(file);
-    std::fseek(file, posFinish, SEEK_SET);//переходим в конец
+    std::fseek(file, long(posStart), SEEK_SET);//переходим в конец
 }
 
 void TSerializationBin::SaveList(const TPropertyClass *obj, FILE* file, const TPropInfo &prop) const
@@ -385,9 +385,9 @@ void TSerializationBin::SaveList(const TPropertyClass *obj, FILE* file, const TP
     fpos_t posFinish = 0;
     std::fgetpos(file, &posFinish);//сохраняем позицию для расчета рамзмера
     node.size = posFinish - posCalc;
-    std::fseek(file, posStart, SEEK_SET);//переходим в начало для перезаписи
+    std::fseek(file, long(posStart), SEEK_SET);//переходим в начало для перезаписи
     node.WriteNode(file);
-    std::fseek(file, posFinish, SEEK_SET);//переходим в конец
+    std::fseek(file, long(posFinish), SEEK_SET);//переходим в конец
 }
 
 bool TSerializationBin::LoadFromFile(const TString& path, TPropertyClass& value) const
@@ -404,14 +404,14 @@ bool TSerializationBin::Load(TPropertyClass *obj, FILE* file, const TNode& node)
 {
     const TPropertyManager &man = obj->Manager();
 
-    for(size_t i = 0; i < node.count; i++)
+    for(int i = 0; i < node.count; i++)
     {
         TNode child;
         child.ReadNode(file);
         const TPropInfo &prop = man.FindProperty(child.name);
         if(prop.IsValid() == false)//если такого свойства уже нет
         {
-            std::fseek(file, child.size, SEEK_CUR);
+            std::fseek(file, long(child.size), SEEK_CUR);
         }
         else
             if (child.kind == kbClass)
@@ -425,7 +425,7 @@ bool TSerializationBin::Load(TPropertyClass *obj, FILE* file, const TNode& node)
                     prop.CallSet(obj, PropertyClassToVariable(ptr));
                 }
                 if (ptr) Load(ptr.get(), file, child);//не стал проверять результат
-                else std::fseek(file, child.size, SEEK_CUR);
+                else std::fseek(file, long(child.size), SEEK_CUR);
             }
             else
                 if (child.kind == kbList)
@@ -437,7 +437,7 @@ bool TSerializationBin::Load(TPropertyClass *obj, FILE* file, const TNode& node)
                     if (prop.IsLoadable())
                         prop.CallSet(obj, child.ReadValue(file));
                     else
-                        std::fseek(file, child.size, SEEK_CUR);
+                        std::fseek(file, long(child.size), SEEK_CUR);
                 }
     }
     return true;
@@ -447,9 +447,9 @@ void TSerializationBin::LoadList(TPropertyClass *obj, FILE* file, const TNode& n
 {
     int num = 0;
     TPtrPropertyClass ptr;
-    for(size_t i = 0; i < node.count; i++)
+    for(int i = 0; i < node.count; i++)
     {
-        int64_t count = prop.CallGetCountArray(obj);
+        int count = prop.CallGetCountArray(obj);
         TNode child;
         child.ReadNode(file);
         if (num >= count)
@@ -458,7 +458,7 @@ void TSerializationBin::LoadList(TPropertyClass *obj, FILE* file, const TNode& n
             ptr = VariableToPropClass(prop.CallGetArray(obj, num));
         if (ptr == nullptr)
         {
-            std::fseek(file, child.size, SEEK_CUR);
+            std::fseek(file, long(child.size), SEEK_CUR);
             continue;
         }
         prop.CallAddArray(obj, PropertyClassToVariable(ptr));

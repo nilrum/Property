@@ -87,7 +87,7 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
     if(obj == nullptr || IsProp()) return;
     idChange = obj->OnChange().connect([this](){ CallUpdate(); });
     const TPropertyManager& man = value->Manager();
-    for(int i = 0; i < man.CountProperty(); i++)
+    for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив
             if(CheckProp(man.Property(i)))
                 props.emplace_back(obj, this, i);
@@ -114,7 +114,7 @@ bool TObjTree::HasChild(const TPtrPropertyClass &value) const
 {
     if(static_cast<bool>(value) == false) return false;
     const TPropertyManager& man = value->Manager();
-    for(int i = 0; i < man.CountProperty(); i++)
+    for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod() == false)//если есть свойства класс или массив
         {
             TVariable v;
@@ -189,7 +189,7 @@ void TObjTree::Load(bool refind)
     ClearChilds();
     if(obj == nullptr) return;
     const TPropertyManager& man = obj->Manager();
-    for(int i = 0; i < man.CountProperty(); i++)
+    for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsClass())//если свойства класс
         {
             TPtrPropertyClass ptr = VariableToPropClass(obj->ReadProperty(i));
@@ -250,7 +250,7 @@ TObjTree *TObjTree::Parent()
 int TObjTree::Num(int def) const
 {
     if(parent)
-        for(int i = 0; i < parent->CountChilds(); i++)
+        for(size_t i = 0; i < parent->CountChilds(); i++)
             if(&parent->Child(i) == this) return i;
     return def;
 }
@@ -301,7 +301,7 @@ TObjTree::TVectArrayInfo TObjTree::ArrayInfo() const
 {
     TVectArrayInfo rez;
     const TPropertyManager& man = obj->Manager();
-    for(int i = 0; i < man.CountProperty(); i++)
+    for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsArray())
             rez.emplace_back(man.Property(i).Name(), i);
     return rez;

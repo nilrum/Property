@@ -61,7 +61,7 @@ std::string TVariable::TypeName() const
         case TVariableType::vtEnum:
             return "enum";
         case TVariableType::vtExt:
-            return std::any_cast<TPtrVariableExt>(varValue)->TypeName();
+            return std::any_cast<TEnum>(varValue).TypeEnum();
         default:
             return std::string();
     }
@@ -108,7 +108,7 @@ uint64_t TVariable::ToUInt() const
             case TVariableType::vtDouble:
                 return static_cast<uint64_t >(std::any_cast<double>(varValue));
             case TVariableType::vtStr:
-                return std::stoll(std::any_cast<std::string>(varValue));
+                return std::stoull(std::any_cast<std::string>(varValue));
             case TVariableType::vtEnum:
                 return std::any_cast<TEnum>(varValue).Index();
         }
@@ -135,7 +135,7 @@ double TVariable::ToDouble() const
             case TVariableType::vtStr:
                 return std::stod(std::any_cast<std::string>(varValue));
             case TVariableType::vtEnum:
-                return std::any_cast<TEnum>(varValue).Index();
+                return double(std::any_cast<TEnum>(varValue).Index());
         }
     }
     catch (std::invalid_argument)
@@ -180,22 +180,27 @@ TVariable TVariable::FromData(const TVariableType &type, void *data, const size_
     switch (type)
     {
         case TVariableType::vtEnum:
+        {
+            int32_t value = 0;
+            memcpy(&value, data, sizeof(int32_t));
+            return TVariable(value);
+        }
         case TVariableType::vtInt:
         {
             int64_t value = 0;
-            memcpy(&value, data, count);
+            memcpy(&value, data, sizeof(int64_t));
             return TVariable(value);
         }
         case TVariableType::vtUInt:
         {
             uint64_t value = 0;
-            memcpy(&value, data, count);
+            memcpy(&value, data, sizeof(uint64_t));
             return TVariable(value);
         }
         case TVariableType::vtDouble:
         {
             double value = 0;
-            memcpy(&value, data, count);
+            memcpy(&value, data, sizeof(double));
             return TVariable(value);
         }
         case TVariableType::vtStr:
@@ -218,8 +223,9 @@ size_t TVariable::Size() const
         case TVariableType::vtUInt: return sizeof(size_t);
         case TVariableType::vtDouble: return sizeof(double);
         case TVariableType::vtStr: return std::any_cast<std::string>(varValue).size();
-        case TVariableType::vtEnum: return sizeof(int64_t);
+        case TVariableType::vtEnum: return sizeof(int32_t);
         case TVariableType::vtExt: return std::any_cast<TPtrVariableExt>(varValue)->Size();
+        default: return 0;
     }
 }
 
@@ -229,7 +235,6 @@ std::vector<uint8_t> TVariable::ToData() const
     {
         case TVariableType::vtNone: return std::vector<uint8_t>();
         case TVariableType::vtInt:
-        case TVariableType::vtEnum:
         {
             int64_t value = ToInt();
             std::vector<uint8_t> rez(sizeof(int64_t));
@@ -238,7 +243,7 @@ std::vector<uint8_t> TVariable::ToData() const
         }
         case TVariableType::vtUInt:
         {
-            size_t value = ToUInt();
+            uint64_t value = ToUInt();
             std::vector<uint8_t> rez(sizeof(uint64_t));
             memcpy(&rez[0], &value, sizeof(uint64_t));
             return rez;
@@ -250,6 +255,13 @@ std::vector<uint8_t> TVariable::ToData() const
             memcpy(&rez[0], &value, sizeof(double));
             return rez;
         }
+        case TVariableType::vtEnum:
+        {
+            int32_t value = static_cast<int>(ToInt());
+            std::vector<uint8_t> rez(sizeof(int32_t));
+            memcpy(&rez[0], &value, sizeof(int32_t));
+            return rez;
+        }
         case TVariableType::vtStr:
         {
             std::string value = ToString();
@@ -258,6 +270,8 @@ std::vector<uint8_t> TVariable::ToData() const
             return rez;
         }
         case TVariableType::vtExt: return std::vector<uint8_t>();
+
+        default: return std::vector<uint8_t>();
     }
 }
 

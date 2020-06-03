@@ -96,7 +96,7 @@ public:
     //вызовы для индекс свойств
     TVariable CallGetArray(const TPropertyClass *obj, int index) const { return getArray(obj, index); }
 
-    int64_t CallGetCountArray(const TPropertyClass *obj) const { return get(obj).ToInt(); }
+    int CallGetCountArray(const TPropertyClass *obj) const { return int(get(obj).ToInt()); }
 
     void CallAddArray(TPropertyClass *obj, const TVariable &value) const { set(obj, value); }
 
@@ -172,7 +172,7 @@ public:
     TVariable ReadProperty(int index, const TPropertyClass *obj) const;
     void WriteProperty(int index, TPropertyClass *obj, const TVariable &value);
 
-    int64_t ReadCountInArray(int index, const TPropertyClass *obj) const;
+    int ReadCountInArray(int index, const TPropertyClass *obj) const;
     TVariable ReadFromArray(int index, const TPropertyClass *obj, int indexArray) const;
 
     void AddToArray(int index, TPropertyClass *obj, const TVariable &value);
@@ -236,8 +236,8 @@ public:
     void WriteProperty(int index, const TVariable &value);
     void WriteProperty(const TString &nameProperty, const TVariable &value);
 
-    int64_t CountInArray(int index) const;
-    int64_t CountInArray(const TString &nameProperty) const;
+    int CountInArray(int index) const;
+    int CountInArray(const TString &nameProperty) const;
 
     TVariable ReadFromArray(int index, int indexArray) const;
     TVariable ReadFromArray(const TString &nameProperty, int indexArray) const;

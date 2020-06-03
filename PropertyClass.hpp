@@ -117,7 +117,7 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
         STATIC_ARG(TPropertyManager, ManagerStatic, #TYPE, CREATE)\
         virtual TPropertyManager& Manager() CHECK { return TYPE::ManagerStatic(); }\
         virtual const TPropertyManager& Manager() const CHECK { return TYPE::ManagerStatic(); }\
-        using TYPENAME = TYPE;
+        using TYPENAME = TYPE;\
 
 #define DEF_CREATE(TYPE) [](){ return std::make_shared<TYPE>(); }
 #define NO_CREATE() TPropertyManager::TFunCreate()

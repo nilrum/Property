@@ -577,3 +577,60 @@ TEST(TestSpeed, ReadPropertyesNew)
         TString strValue = obj.ReadProperty(0);
     }
 }
+
+TEST(TestFormatDouble, LowDouble)
+{
+    TFormatDouble f;
+    EXPECT_EQ(f.Format(10), "10");
+
+    EXPECT_EQ(f.Format(10.4), "10");
+    EXPECT_EQ(f.Format(10.5), "10.5");
+    EXPECT_EQ(f.Format(10.9), "10.9");
+
+    EXPECT_EQ(f.Format(10.93), "10.9");
+    EXPECT_EQ(f.Format(10.95), "10.95");
+    EXPECT_EQ(f.Format(10.99), "10.99");
+
+    EXPECT_EQ(f.Format(10.991), "10.99");
+    EXPECT_EQ(f.Format(10.995), "10.995");
+    EXPECT_EQ(f.Format(10.998), "10.998");
+
+    EXPECT_EQ(f.Format(10.9982), "10.998");
+    EXPECT_EQ(f.Format(10.9985), "10.998");
+    EXPECT_EQ(f.Format(10.9989), "10.998");
+
+    EXPECT_EQ(f.Format(10.99891), "10.998");
+    EXPECT_EQ(f.Format(10.99895), "10.998");
+    EXPECT_EQ(f.Format(10.99899), "10.998");
+}
+
+TEST(TestFormatDouble, BigDouble)
+{
+    TFormatDouble f;
+    EXPECT_EQ(f.Format(999999.888), "999999.888");
+    EXPECT_EQ(f.Format(1000000.), "1*10⁶");
+    EXPECT_EQ(f.Format(1000000.999), "1*10⁶");
+
+    EXPECT_EQ(f.Format(1200000.), "1*10⁶");
+    EXPECT_EQ(f.Format(1500000.), "1.5*10⁶");
+    EXPECT_EQ(f.Format(1900000.), "1.9*10⁶");
+
+    EXPECT_EQ(f.Format(8930000.), "8.9*10⁶");
+    EXPECT_EQ(f.Format(8950000.), "8.95*10⁶");
+    EXPECT_EQ(f.Format(8980000.), "8.98*10⁶");
+
+    EXPECT_EQ(f.Format(8981000.), "8.98*10⁶");
+    EXPECT_EQ(f.Format(8985000.), "8.985*10⁶");
+    EXPECT_EQ(f.Format(8989000.), "8.989*10⁶");
+
+    EXPECT_EQ(f.Format(8989822.), "8.989*10⁶");
+    EXPECT_EQ(f.Format(8989856.), "8.989*10⁶");
+    EXPECT_EQ(f.Format(8989999.), "8.989*10⁶");
+
+    EXPECT_EQ(f.Format(10000000.), "1*10⁷");
+    EXPECT_EQ(f.Format(18989822.), "1.898*10⁷");
+    EXPECT_EQ(f.Format(28989856.), "2.898*10⁷");
+    EXPECT_EQ(f.Format(79899989.), "7.989*10⁷");
+
+    EXPECT_EQ(f.Format(100000000.), "1*10⁸");
+}

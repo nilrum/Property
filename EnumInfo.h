@@ -48,13 +48,13 @@ public:
 
     inline TString Name(int index) const
     {
-        if (index >= 0 && index < names.size()) return names[index];
+        if (index >= 0 && index < int(names.size())) return names[index];
         return TString();
     }
 
     inline double Value(int index) const
     {
-        if (index >= 0 && index < values.size()) return values[index];
+        if (index >= 0 && index < int(values.size())) return values[index];
         return 0.;
     }
 
@@ -135,15 +135,15 @@ TString EnumName(const T& index)
 class TEnum{
 private:
     const std::type_info* info = nullptr;
-    int64_t index = 0;
+    int index = 0;
     friend TEnumInfo;
-    TEnum(const std::type_info* inf, int64_t ind):info(inf), index(ind){}
+    TEnum(const std::type_info* inf, int ind):info(inf), index(ind){}
 public:
     TEnum(){}
     template <typename T, typename = std::enable_if_t<std::is_enum_v<T>>>
         TEnum(const T& value)
     {
-        index = static_cast<int64_t>(value);
+        index = static_cast<int>(value);
         info = &typeid(T);
     }
 
@@ -152,6 +152,7 @@ public:
     const std::type_info& Info() const { return *info; }
     TString Name() const { return TEnumInfo::EnumInfo(*info).Name(index); }
     const TVecString& Names() const { return TEnumInfo::EnumInfo(*info).Names(); }
+    TString TypeEnum() const { return TEnumInfo::EnumInfo(*info).TypeEnum(); }
 };
 
 

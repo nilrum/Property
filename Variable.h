@@ -84,7 +84,6 @@ public:
             }
             else
             {
-                //varValue = std::any(TEnumInfo{ &typeid(T), static_cast<int64_t>(value) });
                 varValue = TEnum(value);
                 varType = TVariableType::vtEnum;
             }
@@ -136,7 +135,7 @@ T TVariable::ToEnum() const
     {
         const TEnumInfo& en = TEnumInfo::EnumInfo(typeid(T));
         int index = en.IndexFromName(ToString());
-        if(index == -1) index = ToInt();
+        if(index == -1) index = int(ToInt());
         return static_cast<T>(index);
     }
     return static_cast<T>(ToInt());

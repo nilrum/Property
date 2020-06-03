@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <typeinfo>
 #include <math.h>
+#include <stdarg.h>
 
 using TString = std::string;
 using TVecString = std::vector<TString>;
@@ -18,6 +19,7 @@ using TVecDouble = std::vector<double>;
 using TVecUInt = std::vector<size_t>;
 using TVecInt = std::vector<int>;
 using TVecBool = std::vector<bool>;
+using TColor = uint64_t;
 
 #define STR(VAL) (VAL).c_str()
 template<class T>
@@ -124,6 +126,7 @@ private:
 
 };
 
+
 #define REGISTER_CODES(TYPE, CODE, TEXT)\
     namespace{\
         const bool r##CODE = TResult::Register(typeid(TYPE), static_cast<int>(TYPE::CODE), TEXT);\
@@ -178,7 +181,7 @@ public:
     }
     void clear()
     {
-        for(int i = 0; i < data.size(); i++)
+        for(size_t i = 0; i < data.size(); i++)
             delete data[i];
         data.clear();
     }
@@ -233,27 +236,123 @@ struct TDoubleCheck{
         return Great(one, two) || Equal(one, two);
     }
 
-    struct TDoubleLess : public std::binary_function<double, double, bool>
+    struct TDoubleLess// : public std::binary_function<double, double, bool>
     {
         bool operator()(const double& x, const double& y) const
         { return Less(x, y); }
     };
 
-    struct TDoubleLessEq : public std::binary_function<double, double, bool>
+    struct TDoubleLessEq// : public std::binary_function<double, double, bool>
     {
         bool operator()(const double& x, const double& y) const
         { return LessEq(x, y); }
     };
 
-    struct TDoubleGreater : public std::binary_function<double, double, bool>
+    struct TDoubleGreater// : public std::binary_function<double, double, bool>
     {
         bool operator()(const double& x, const double& y) const
         { return Great(x, y); }
     };
-    struct TDoubleGreaterEq : public std::binary_function<double, double, bool>
+    struct TDoubleGreaterEq// : public std::binary_function<double, double, bool>
     {
         bool operator()(const double& x, const double& y) const
         { return GreatEq(x, y); }
     };
 };
+
+#define STDFORMAT(FRMT, ...) StdFormat(std::snprintf(nullptr, 0, FRMT, __VA_ARGS__) + 1, FRMT, __VA_ARGS__)
+
+
+inline std::string StdFormat(int sizeBuf, const char* frmt,  ...)
+{
+    va_list args;
+    va_start(args, frmt);
+    std::vector<char> buf(sizeBuf);
+    std::vsnprintf(&buf[0], buf.size(), frmt, args);
+    return &buf[0];
+}
+
+class TFormatDouble{
+private:
+    int maxEndCount;//максимум три знака после запятой
+    int maxBegCount;//максимум пять знаков перед запятой
+    int beginCheck;//для 5ти знаков будет максимальное 1000000
+    int endCheck;
+    bool isUseUtf8 = true;
+    static constexpr uint8_t textPows[8][8] = {
+            {0xC3, 0x97, '1', '0', 0xC2, 0xB2, 0},        // * 10 ^ 2
+            {0xC3, 0x97, '1', '0', 0xC2, 0xB3, 0},        // 3
+            {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB4, 0},  //4
+            {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB5, 0},  //5
+            {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB6, 0},  //6
+            {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB7, 0},  //7
+            {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB8, 0},  //8
+            {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB9, 0}  //9
+            };
+public:
+    TFormatDouble(int maxEnd = 3, int maxBeg = 6){ Set(maxEnd, maxBeg); }
+
+    void Set(int maxEnd, int maxBeg = 6)
+    {
+        maxEndCount = maxEnd;
+        maxBegCount = std::max(2, maxBeg);
+
+        beginCheck = std::pow(10, maxBegCount);
+        endCheck = std::pow(10, maxEndCount);
+    }
+    TString Format( double value) const
+    {
+        if(std::isnan(value))
+            return "nan";
+        if(value < beginCheck)
+        {
+            int begVal = value;
+            int endVal = (value - begVal + 0.0000001) * endCheck;
+
+            if(endVal)
+            {
+                int endCheckVal = endCheck;
+                while (endCheckVal > 1)
+                {
+                    endCheckVal = endCheckVal / 10;
+                    if ((endVal / endCheckVal) % 10 < 5)
+                    {
+                        endCheckVal = endCheckVal * 10;
+                        break;
+                    }
+                }
+                endVal = endVal / endCheckVal;
+            }
+
+            if(endVal == 0)
+                return std::to_string(begVal);
+            else
+                return std::to_string(begVal) + "." + std::to_string(endVal);
+        }
+        else
+        {
+            double begin = beginCheck;
+            double val = value / begin;
+            int pow = maxBegCount;
+            while (val >= 10)
+            {
+                pow++;
+                begin = begin * 10;
+                val = value / begin;
+            }
+            if(isUseUtf8 && pow < 10)
+                return Format(val) + TString((char*)textPows[pow - 2]);
+            else
+                return Format(val) + "*10^" + std::to_string(pow);
+        }
+    }
+
+    static TString Format(double value, int maxEnd, int maxBeg = 6)
+    {
+        return TFormatDouble(maxEnd, maxBeg).Format(value);
+    }
+
+};
+
+
 #endif //TESTAPP_TYPES_H
