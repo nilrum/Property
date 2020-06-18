@@ -31,11 +31,11 @@ protected:
 
 struct xml_string_writer : public pugi::xml_writer
 {
-    TString rezult;
+    TString result;
 
     virtual void write(const void *data, size_t size) override
     {
-        rezult.append(static_cast<const char *>(data), size);
+        result.append(static_cast<const char *>(data), size);
     }
 };
 
@@ -45,7 +45,7 @@ TString TSerializationXml::SaveTo(const TPropertyClass &value) const
     Save(&value, xml, value.TypeClass());
     xml_string_writer stringWriter;
     xml.save(stringWriter);
-    return stringWriter.rezult;
+    return stringWriter.result;
 }
 
 bool TSerializationXml::LoadFrom(const TString &text, TPropertyClass &value) const

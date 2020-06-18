@@ -10,15 +10,18 @@
 #include <map>
 #include <algorithm>
 #include <typeinfo>
+#include <cmath>
 #include <math.h>
 #include <stdarg.h>
 
 using TString = std::string;
 using TVecString = std::vector<TString>;
 using TVecDouble = std::vector<double>;
+using TVecVecDouble = std::vector<TVecDouble>;
 using TVecUInt = std::vector<size_t>;
 using TVecInt = std::vector<int>;
 using TVecBool = std::vector<bool>;
+using TVecUChar = std::vector<unsigned char>;
 using TColor = uint64_t;
 
 #define STR(VAL) (VAL).c_str()
@@ -77,6 +80,22 @@ std::vector<T> SplitTrim(const T& value, typename T::value_type delim)
     for(size_t i = 0; i < rez.size(); i++)
         rez[i] = Trim(rez[i]);
     return rez;
+}
+
+template<typename T>
+T ToUpperCase(const T& value)
+{
+    T res = value;
+    std::transform(value.begin(), value.end(), res.begin(), ::toupper);
+    return res;
+}
+
+template<typename T>
+T ToLowerCase(const T& value)
+{
+    T res = value;
+    std::transform(value.begin(), value.end(), res.begin(), ::tolower);
+    return res;
 }
 
 class /* [[nodiscard]]*/ TResult{
@@ -299,6 +318,14 @@ public:
 
         beginCheck = std::pow(10, maxBegCount);
         endCheck = std::pow(10, maxEndCount);
+    }
+    TString Format(double value, double eps)
+    {
+        if(eps > 1) return Format(value);
+
+        int begVal = value;
+        int endVal = (value - begVal + 0.0000001) * endCheck;
+        return std::to_string(begVal) + "." + std::to_string(endVal);
     }
     TString Format( double value) const
     {
