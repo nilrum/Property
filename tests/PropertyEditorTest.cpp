@@ -161,3 +161,24 @@ TEST(TestPropertyEditor, TestListArrayProps)
     EXPECT_EQ(std::get<0>(info[0]),  TString("childs"));
     EXPECT_EQ(std::get<1>(info[0]),  7);
 }
+
+TEST(TestPropertyEditor, TestNotAll)
+{
+    TPtrPropertyClass obj = std::make_shared<TPropertyInher2>();
+    TPropertyEditor edit;
+    edit.SetIsAll(false);
+    edit.SetObject(obj);
+    TObjTree &tree = edit.Tree();
+
+    EXPECT_EQ(tree.IndProp(), -1);
+    EXPECT_EQ(tree.IsLoaded(), false);//объекты не загружены
+    EXPECT_EQ(tree.IsChilds(), false);//объектов свойтсв нету
+    EXPECT_EQ(tree.IsProp(), false);
+
+    EXPECT_EQ(tree.Name(), TString("Name"));
+    EXPECT_EQ(tree.Value().ToString(), TString("TPropertyInher2::"));
+    EXPECT_EQ(tree.Parent(), nullptr);
+    EXPECT_EQ(tree.Num(), -1);
+
+    EXPECT_EQ(tree.CountProps(), 0);
+}

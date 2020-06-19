@@ -3,6 +3,10 @@
 //
 
 #include "PropertyEditor.h"
+TPropertyEditor::TPropertyEditor()
+{
+    tree.SetInfo(&info);
+}
 
 TPropertyEditor &TPropertyEditor::SetIsAll(bool value)
 {
@@ -13,40 +17,40 @@ TPropertyEditor &TPropertyEditor::SetIsAll(bool value)
 
 bool TPropertyEditor::IsAll() const
 {
-    return isAllType && isAllProperty;
+    return info.IsAll();
 }
 
 TPropertyEditor &TPropertyEditor::SetIsAllType(bool value)
 {
-    isAllType = value;
+    info.SetIsAll(value);
     return *this;
 }
 
 bool TPropertyEditor::IsAllType() const
 {
-    return isAllType;
+    return info.IsAllType();
 }
 
 TPropertyEditor &TPropertyEditor::SetIsAllProperty(bool value)
 {
-    isAllProperty = value;
+    info.SetIsAllProperty(value);
     return *this;
 }
 
 bool TPropertyEditor::IsAllProperty() const
 {
-    return isAllProperty;
+    return info.IsAllProperty();
 }
 
 TPropertyEditor &TPropertyEditor::SetIsEdit(bool value)
 {
-    isEdit = value;
+    info.SetIsEdit(value);
     return *this;
 }
 
 bool TPropertyEditor::IsEdit() const
 {
-    return isEdit;
+    return info.IsEdit();
 }
 
 void TPropertyEditor::SetObject(TPtrPropertyClass value)
@@ -61,7 +65,12 @@ TObjTree &TPropertyEditor::Tree()
     return tree;
 }
 
-//TObjTree
+TCustInfo &TPropertyEditor::Info()
+{
+    return info;
+}
+
+//-------------------------------------TObjTree-------------------------------------------------------------------------
 TObjTree::TObjTree(const TPtrPropertyClass &value, TObjTree* p, int ind):parent(p), indProp(ind)
 {
     SetObj(value);
@@ -139,8 +148,10 @@ bool TObjTree::CheckType(const TVariable &value) const
 
 bool TObjTree::CheckType(const TPtrPropertyClass &value) const
 {
-    if(static_cast<bool>(value) == false) return false;
-    return true;
+    if(value == nullptr) return false;
+    if(this->parent) return parent->CheckType(value);
+    if(info) return info->CheckType(value->TypeClass());
+    return false;
 }
 
 size_t TObjTree::CountProps() const
@@ -235,11 +246,11 @@ bool TObjTree::IsEnum() const
     return false;
 }
 
-
-
 bool TObjTree::CheckProp(const TPropInfo& value) const
 {
-    return true;
+    if(parent) return parent->CheckProp(value);
+    if(info) return info->CheckProp(value.Name());
+    return false;
 }
 
 TObjTree *TObjTree::Parent()
@@ -373,6 +384,13 @@ TFunUpdateTree TObjTree::GetFunUpdate()
     return update;
 }
 
+void TObjTree::SetInfo(TCustInfo *value)
+{
+    info = value;
+}
 
 
-
+TCustInfo &TCustInfo::AddProp(const TString &name, bool visible)
+{
+    props[name] = visible;
+}

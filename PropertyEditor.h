@@ -11,12 +11,47 @@
 class TObjTree;
 using TFunUpdateTree = std::function<void(TObjTree* value)>;
 
+class TCustInfo{
+    bool isAllType = true;
+    bool isAllProperty = true;
+    bool isEdit = true;
+    std::map<TString, TCustInfo> types;
+    std::map<TString, bool> props;
+public:
+    inline bool IsAll() const { return isAllType || isAllProperty; }
+    inline bool IsAllType() const { return isAllType; }
+    inline bool IsAllProperty() const { return isAllProperty; }
+
+    inline void SetIsAll(bool value) { isAllType = isAllProperty = value; }
+    inline void SetIsAllType(bool value) { isAllType = value; }
+    inline void SetIsAllProperty(bool value) { isAllProperty = value; }
+
+    inline bool IsEdit() const { return isEdit; }
+    inline void SetIsEdit(bool value) { isEdit = value; }
+
+    TCustInfo& AddProp(const TString& name, bool visible);
+
+    bool CheckType(const TString& value)
+    {
+        if(isAllType) return true;          //если стоит флаг что показывать любой тип
+        auto it = types.find(value);        //иначе ищим есть ли такой тип здесь
+        if(it == types.end()) return false; //если не нашли значит такой тип не разрешен
+        return it->second.isAllProperty || props.size();//если нашли значит должен быть либо все свойства либо какие то из них
+    }
+    bool CheckProp(const TString& value)
+    {
+        if(isAllProperty) return true;
+        auto it = props.find(value);
+        if(it == props.end()) return false;
+        return it->second;
+    }
+};
 class TObjTree{
 public:
     TObjTree(const TPtrPropertyClass& value = TPtrPropertyClass(), TObjTree* parent = nullptr, int indProp = -1);
     void Clear();//очищаем полностью объект
     void ClearChilds();//очищаем объекты владения
-
+    void SetInfo(TCustInfo* value);
     void SetObj(const TPtrPropertyClass& value);
     const TPtrPropertyClass& Obj() const;
     int IndProp() const;
@@ -61,6 +96,7 @@ public:
     using TVecObjTree = TPtrVector<TObjTree>;
 private:
     TObjTree* parent = nullptr;
+    TCustInfo* info = nullptr;
     TFunUpdateTree update;
     TPtrPropertyClass obj;
     TIdConnect idChange;
@@ -86,7 +122,7 @@ private:
 
 class TPropertyEditor{
 public:
-    TPropertyEditor() = default;
+    TPropertyEditor();
 
     virtual void SetObject(TPtrPropertyClass value);
 
@@ -102,13 +138,14 @@ public:
     TPropertyEditor& SetIsEdit(bool value = true);
     bool IsEdit() const;
 
-    TObjTree& Tree();
+    TCustInfo& Type(const TString& type, bool IsAll = false);//добавляет тип вместе со всеми его свойствами
+    TPropertyEditor& Type(const TString& type, const TString);//добавляет тип вместе со всеми его свойствами
 
+    TObjTree& Tree();
+    TCustInfo& Info();
 protected:
     TPtrPropertyClass obj;
-    bool isAllType = true;
-    bool isAllProperty = true;
-    bool isEdit = true;
+    TCustInfo info;
     TObjTree tree;
 };
 

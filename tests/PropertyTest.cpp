@@ -280,64 +280,54 @@ TEST(PropertyTest, Serialization)
     a.AddChild(childInher);
     a.AddChild(std::make_shared<TPropertyClass>())->SetName("childProp");
 
-    TVecString fileNames = {"a.xml", "a.bin"};
-    bool IsSaveTo[2] = {true, false};
-    for(size_t i = 0; i < static_cast<size_t >(TSerializationKind::skCount); i++)
-    {
-        TSerialization ser(static_cast<TSerializationKind>(i));
-        if(IsSaveTo[i])
-        {
-            TString data = ser.SaveTo(a);
-            EXPECT_FALSE(data.empty());
+    TString fileName = "a.xml";
+    TSerialization ser(TSerializationKind::skXml);
+    TString data = ser.SaveTo(a);
+    EXPECT_FALSE(data.empty());
 
-            TPropertyInher b;
-            EXPECT_TRUE(ser.LoadFrom(data, b));
+    TPropertyInher b;
+    EXPECT_TRUE(ser.LoadFrom(data, b));
 
-            EXPECT_EQ(b.Name(), TString("Var a"));
-            EXPECT_EQ(b.IntVar(), 10);
-            EXPECT_EQ(b.StringVar(), TString("hello"));
-            EXPECT_EQ(b.BoolVar(), true);
-            EXPECT_EQ(b.DoubleVar(), 4.5678);
-            EXPECT_EQ(b.ClassVar()->Name(), TString("classVarName"));
-            EXPECT_EQ(b.ClassVar2()->Name(), TString("classVar2Name"));
-            EXPECT_EQ(b.ClassVar2()->IntVar2(), 30);
-            ASSERT_EQ(b.CountChilds(), 2);
-            EXPECT_EQ(b.Child(0)->Name(), TString("childInher"));
-            EXPECT_EQ(b.Child(0)->ReadProperty("intVar2").ToInt(), 80);
-            EXPECT_EQ(b.Child(1)->Name(), TString("childProp"));
-        }
+    EXPECT_EQ(b.Name(), TString("Var a"));
+    EXPECT_EQ(b.IntVar(), 10);
+    EXPECT_EQ(b.StringVar(), TString("hello"));
+    EXPECT_EQ(b.BoolVar(), true);
+    EXPECT_EQ(b.DoubleVar(), 4.5678);
+    EXPECT_EQ(b.ClassVar()->Name(), TString("classVarName"));
+    EXPECT_EQ(b.ClassVar2()->Name(), TString("classVar2Name"));
+    EXPECT_EQ(b.ClassVar2()->IntVar2(), 30);
+    ASSERT_EQ(b.CountChilds(), 2);
+    EXPECT_EQ(b.Child(0)->Name(), TString("childInher"));
+    EXPECT_EQ(b.Child(0)->ReadProperty("intVar2").ToInt(), 80);
+    EXPECT_EQ(b.Child(1)->Name(), TString("childProp"));
 
-        EXPECT_TRUE(ser.SaveToFile(fileNames[i], a));
+    EXPECT_TRUE(ser.SaveToFile(fileName, a));
 
-        TPropertyInher c;
-        EXPECT_TRUE(ser.LoadFromFile(fileNames[i], c));
+    TPropertyInher c;
+    EXPECT_TRUE(ser.LoadFromFile(fileName, c));
 
-        EXPECT_EQ(c.Name(), TString("Var a"));
-        EXPECT_EQ(c.IntVar(), 10);
-        EXPECT_EQ(c.StringVar(), TString("hello"));
-        EXPECT_EQ(c.BoolVar(), true);
-        EXPECT_EQ(c.DoubleVar(), 4.5678);
-        EXPECT_EQ(c.ClassVar()->Name(), TString("classVarName"));
-        EXPECT_EQ(c.ClassVar2()->Name(), TString("classVar2Name"));
-        EXPECT_EQ(c.ClassVar2()->IntVar2(), 30);
-        ASSERT_EQ(c.CountChilds(), 2);
-        EXPECT_EQ(c.Child(0)->Name(), TString("childInher"));
-        EXPECT_EQ(c.Child(0)->ReadProperty("intVar2").ToInt(), 80);
-        EXPECT_EQ(c.Child(1)->Name(), TString("childProp"));
+    EXPECT_EQ(c.Name(), TString("Var a"));
+    EXPECT_EQ(c.IntVar(), 10);
+    EXPECT_EQ(c.StringVar(), TString("hello"));
+    EXPECT_EQ(c.BoolVar(), true);
+    EXPECT_EQ(c.DoubleVar(), 4.5678);
+    EXPECT_EQ(c.ClassVar()->Name(), TString("classVarName"));
+    EXPECT_EQ(c.ClassVar2()->Name(), TString("classVar2Name"));
+    EXPECT_EQ(c.ClassVar2()->IntVar2(), 30);
+    ASSERT_EQ(c.CountChilds(), 2);
+    EXPECT_EQ(c.Child(0)->Name(), TString("childInher"));
+    EXPECT_EQ(c.Child(0)->ReadProperty("intVar2").ToInt(), 80);
+    EXPECT_EQ(c.Child(1)->Name(), TString("childProp"));
 
-        if(IsSaveTo[i])
-        {
-            EXPECT_TRUE(ser.SavePropToFileName("prop_" + fileNames[i], a, "childs"));
+    EXPECT_TRUE(ser.SavePropToFileName("prop_" + fileName, a, "childs"));
 
-            TPropertyInher d;
-            EXPECT_TRUE(ser.LoadPropFromFileName("prop_" + fileNames[i], d, "childs"));
+    TPropertyInher d;
+    EXPECT_TRUE(ser.LoadPropFromFileName("prop_" + fileName, d, "childs"));
 
-            ASSERT_EQ(d.CountChilds(), 2);
-            EXPECT_EQ(d.Child(0)->Name(), TString("childInher"));
-            EXPECT_EQ(d.Child(0)->ReadProperty("intVar2").ToInt(), 80);
-            EXPECT_EQ(d.Child(1)->Name(), TString("childProp"));
-        }
-    }
+    ASSERT_EQ(d.CountChilds(), 2);
+    EXPECT_EQ(d.Child(0)->Name(), TString("childInher"));
+    EXPECT_EQ(d.Child(0)->ReadProperty("intVar2").ToInt(), 80);
+    EXPECT_EQ(d.Child(1)->Name(), TString("childProp"));
 }
 
 TEST(PropertyTest, Manager)
@@ -539,7 +529,7 @@ TEST(TestSpeed, ReadPropertyesRaw)
     EXPECT_EQ(obj.ReadProperty(1).ToInt(), 10);
     EXPECT_EQ(obj.ReadProperty(0).ToString(), TString("Hello world"));
 
-    for(int i = 0; i < 1000000; i++)
+    for(int i = 0; i < 10000; i++)
     {
         int intValue = TVariable(obj.IntVar2());
         TString strValue = TVariable(obj.Name());
@@ -555,7 +545,7 @@ TEST(TestSpeed, ReadPropertyesDef)
     EXPECT_EQ(obj.ReadProperty(1).ToInt(), 10);
     EXPECT_EQ(obj.ReadProperty(0).ToString(), TString("Hello world"));
 
-    for(int i = 0; i < 1000000; i++)
+    for(int i = 0; i < 10000; i++)
     {
         int intValue = obj.ReadProperty(1);
         TString strValue = obj.ReadProperty(0);
@@ -571,7 +561,7 @@ TEST(TestSpeed, ReadPropertyesNew)
     EXPECT_EQ(obj.ReadProperty(1).ToInt(), 10);
     EXPECT_EQ(obj.ReadProperty(0).ToString(), TString("Hello world"));
 
-    for(int i = 0; i < 1000000; i++)
+    for(int i = 0; i < 10000; i++)
     {
         int intValue = obj.ReadProperty(1);
         TString strValue = obj.ReadProperty(0);
@@ -608,29 +598,29 @@ TEST(TestFormatDouble, BigDouble)
 {
     TFormatDouble f;
     EXPECT_EQ(f.Format(999999.888), "999999.888");
-    EXPECT_EQ(f.Format(1000000.), "1*10⁶");
-    EXPECT_EQ(f.Format(1000000.999), "1*10⁶");
+    EXPECT_EQ(f.Format(1000000.), "1×10⁶");
+    EXPECT_EQ(f.Format(1000000.999), "1×10⁶");
 
-    EXPECT_EQ(f.Format(1200000.), "1*10⁶");
-    EXPECT_EQ(f.Format(1500000.), "1.5*10⁶");
-    EXPECT_EQ(f.Format(1900000.), "1.9*10⁶");
+    EXPECT_EQ(f.Format(1200000.), "1×10⁶");
+    EXPECT_EQ(f.Format(1500000.), "1.5×10⁶");
+    EXPECT_EQ(f.Format(1900000.), "1.9×10⁶");
 
-    EXPECT_EQ(f.Format(8930000.), "8.9*10⁶");
-    EXPECT_EQ(f.Format(8950000.), "8.95*10⁶");
-    EXPECT_EQ(f.Format(8980000.), "8.98*10⁶");
+    EXPECT_EQ(f.Format(8930000.), "8.9×10⁶");
+    EXPECT_EQ(f.Format(8950000.), "8.95×10⁶");
+    EXPECT_EQ(f.Format(8980000.), "8.98×10⁶");
 
-    EXPECT_EQ(f.Format(8981000.), "8.98*10⁶");
-    EXPECT_EQ(f.Format(8985000.), "8.985*10⁶");
-    EXPECT_EQ(f.Format(8989000.), "8.989*10⁶");
+    EXPECT_EQ(f.Format(8981000.), "8.98×10⁶");
+    EXPECT_EQ(f.Format(8985000.), "8.985×10⁶");
+    EXPECT_EQ(f.Format(8989000.), "8.989×10⁶");
 
-    EXPECT_EQ(f.Format(8989822.), "8.989*10⁶");
-    EXPECT_EQ(f.Format(8989856.), "8.989*10⁶");
-    EXPECT_EQ(f.Format(8989999.), "8.989*10⁶");
+    EXPECT_EQ(f.Format(8989822.), "8.989×10⁶");
+    EXPECT_EQ(f.Format(8989856.), "8.989×10⁶");
+    EXPECT_EQ(f.Format(8989999.), "8.989×10⁶");
 
-    EXPECT_EQ(f.Format(10000000.), "1*10⁷");
-    EXPECT_EQ(f.Format(18989822.), "1.898*10⁷");
-    EXPECT_EQ(f.Format(28989856.), "2.898*10⁷");
-    EXPECT_EQ(f.Format(79899989.), "7.989*10⁷");
+    EXPECT_EQ(f.Format(10000000.), "1×10⁷");
+    EXPECT_EQ(f.Format(18989822.), "1.898×10⁷");
+    EXPECT_EQ(f.Format(28989856.), "2.898×10⁷");
+    EXPECT_EQ(f.Format(79899989.), "7.989×10⁷");
 
-    EXPECT_EQ(f.Format(100000000.), "1*10⁸");
+    EXPECT_EQ(f.Format(100000000.), "1×10⁸");
 }
