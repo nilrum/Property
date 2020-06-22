@@ -181,4 +181,39 @@ TEST(TestPropertyEditor, TestNotAll)
     EXPECT_EQ(tree.Num(), -1);
 
     EXPECT_EQ(tree.CountProps(), 0);
+
+    edit.Info().AddProp("name");
+    edit.SetObject(obj);
+    EXPECT_EQ(tree.CountProps(), 1);
+    EXPECT_EQ(tree.Prop(0).Name(), "name");
+
+    edit.Info().AddType("TPropertyInher2", TShowKind::Select).AddProp("intVar2");
+    edit.SetObject(obj);
+    EXPECT_EQ(tree.CountProps(), 1);
+    EXPECT_EQ(tree.Prop(0).Name(), "intVar2");
+
+    edit.Clear();
+    edit.SetIsAllProperty(true);
+    edit.SetObject(obj);
+    EXPECT_EQ(tree.CountProps(), 2);
+}
+
+TEST(TestPropertyEditor, TestPropString)
+{
+    TPtrPropertyClass obj = std::make_shared<TPropertyInher>();
+    TPropertyEditor edit;
+    edit.SetIsAll(false);
+    edit.Info().AddProps("stringVar:true, intVar:true");
+    edit.SetObject(obj);
+    TObjTree &tree = edit.Tree();
+
+    EXPECT_EQ(tree.CountProps(), 2);
+    EXPECT_EQ(tree.Prop(0).Name(), "intVar");
+    EXPECT_EQ(tree.Prop(1).Name(), "stringVar");
+
+    edit.Clear();
+    edit.Info().AddProps("stringVar:false, intVar");
+    edit.SetObject(obj);
+    EXPECT_EQ(tree.CountProps(), 1);
+    EXPECT_EQ(tree.Prop(0).Name(), "intVar");
 }

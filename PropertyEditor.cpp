@@ -17,40 +17,40 @@ TPropertyEditor &TPropertyEditor::SetIsAll(bool value)
 
 bool TPropertyEditor::IsAll() const
 {
-    return info.IsAll();
+    return IsAllType() && IsAllProperty();
 }
 
 TPropertyEditor &TPropertyEditor::SetIsAllType(bool value)
 {
-    info.SetIsAll(value);
+    info.SetShowClasses(value ? TShowKind::All : TShowKind::Select);
     return *this;
 }
 
 bool TPropertyEditor::IsAllType() const
 {
-    return info.IsAllType();
+    return info.ShowClasses() == TShowKind::All;
 }
 
 TPropertyEditor &TPropertyEditor::SetIsAllProperty(bool value)
 {
-    info.SetIsAllProperty(value);
+    info.SetShowProperty(value ? TShowKind::All : TShowKind::Select);
     return *this;
 }
 
 bool TPropertyEditor::IsAllProperty() const
 {
-    return info.IsAllProperty();
+    return info.ShowProperty() == TShowKind::All;
 }
 
 TPropertyEditor &TPropertyEditor::SetIsEdit(bool value)
 {
-    info.SetIsEdit(value);
+    info.SetEditProperty(value ? TShowKind::All : TShowKind::None);
     return *this;
 }
 
 bool TPropertyEditor::IsEdit() const
 {
-    return info.IsEdit();
+    return info.EditProperty() == TShowKind::All;
 }
 
 void TPropertyEditor::SetObject(TPtrPropertyClass value)
@@ -68,6 +68,12 @@ TObjTree &TPropertyEditor::Tree()
 TCustInfo &TPropertyEditor::Info()
 {
     return info;
+}
+
+void TPropertyEditor::Clear()
+{
+    tree.Clear();
+    info.Clear();
 }
 
 //-------------------------------------TObjTree-------------------------------------------------------------------------
@@ -96,9 +102,10 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
     if(obj == nullptr || IsProp()) return;
     idChange = obj->OnChange().connect([this](){ CallUpdate(); });
     const TPropertyManager& man = value->Manager();
+    TCustInfo* thisInfo = CustInfo(man);
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив
-            if(CheckProp(man.Property(i)))
+            if(thisInfo->CheckProp(man.Property(i).Name()))
                 props.emplace_back(obj, this, i);
 }
 
@@ -113,16 +120,13 @@ int TObjTree::IndProp() const
     return indProp;
 }
 
-
-bool TObjTree::HasChild(const TVariable &value) const
-{
-    return HasChild(VariableToPropClass(value));
-}
-
 bool TObjTree::HasChild(const TPtrPropertyClass &value) const
 {
-    if(static_cast<bool>(value) == false) return false;
+    if(value == nullptr) return false;
     const TPropertyManager& man = value->Manager();
+
+    TCustInfo* thisInfo = CustInfo(man);
+
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod() == false)//если есть свойства класс или массив
         {
@@ -136,21 +140,10 @@ bool TObjTree::HasChild(const TPtrPropertyClass &value) const
                 if(value->CountInArray(i))//если в массиве есть элементы
                     v = value->ReadFromArray(i, 0);
             }
-            if(CheckType(v)) return true;
+            TPtrPropertyClass ptr = VariableToPropClass(v);
+            if(ptr == nullptr) continue;
+            if(thisInfo->CheckType(ptr->Manager())) return true;
         }
-    return false;
-}
-
-bool TObjTree::CheckType(const TVariable &value) const
-{
-    return CheckType(VariableToPropClass(value));
-}
-
-bool TObjTree::CheckType(const TPtrPropertyClass &value) const
-{
-    if(value == nullptr) return false;
-    if(this->parent) return parent->CheckType(value);
-    if(info) return info->CheckType(value->TypeClass());
     return false;
 }
 
@@ -200,11 +193,13 @@ void TObjTree::Load(bool refind)
     ClearChilds();
     if(obj == nullptr) return;
     const TPropertyManager& man = obj->Manager();
+    TCustInfo* thisInfo = CustInfo(man);
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsClass())//если свойства класс
         {
             TPtrPropertyClass ptr = VariableToPropClass(obj->ReadProperty(i));
-            if(CheckType(ptr))
+            if(ptr == nullptr) continue;
+            if(thisInfo->CheckType(ptr->Manager()))
                 childs.emplace_back(ptr, this, i);
         }
         else if(man.Property(i).IsArray())
@@ -213,7 +208,8 @@ void TObjTree::Load(bool refind)
                 for(int j = 0; j < count; j++)
                 {
                     TPtrPropertyClass ptr = VariableToPropClass(obj->ReadFromArray(i, j));
-                    if(CheckType(ptr))
+                    if(ptr == nullptr) continue;
+                    if(thisInfo->CheckType(ptr->Manager()))
                         childs.emplace_back(ptr, this, i);
                 }
             }
@@ -243,13 +239,6 @@ bool TObjTree::IsColor() const
 
 bool TObjTree::IsEnum() const
 {
-    return false;
-}
-
-bool TObjTree::CheckProp(const TPropInfo& value) const
-{
-    if(parent) return parent->CheckProp(value);
-    if(info) return info->CheckProp(value.Name());
     return false;
 }
 
@@ -335,24 +324,7 @@ void TObjTree::SetIsChecked(bool value)
     int index = obj->IndexProperty("isUsed");
     if(index == -1) return;
     obj->WriteProperty(index, value);
-    /*TChangeThePropertyClass fun = FindFunChecked();//TODO Remove this
-    if(fun)
-    {
-        TString fullName = obj->Name();
-        TObjTree* p = parent;
-        while(p != nullptr)
-        {
-            fullName = p->obj->Name() + "/" + fullName;
-            p = p->Parent();
-        }
-        fun((value) ? obj : TPtrPropertyClass(), fullName);
-    }*/
 }
-
-/*void TObjTree::SetFunChecked(TChangeThePropertyClass value)
-{
-    funChecked = value;
-}*/
 
 TChangeThePropertyClass TObjTree::FindFunChecked() const
 {
@@ -389,8 +361,119 @@ void TObjTree::SetInfo(TCustInfo *value)
     info = value;
 }
 
+TCustInfo* TObjTree::RootInfo() const
+{
+    if(parent) return parent->RootInfo();
+    if(info) return info;
+    return &Single<TCustInfo>();
+}
 
-TCustInfo &TCustInfo::AddProp(const TString &name, bool visible)
+TCustInfo *TObjTree::CustInfo(const TPropertyManager &man) const
+{
+    TCustInfo* rootInfo = RootInfo();
+    TCustInfo* thisInfo = rootInfo->Info(man);
+    if(thisInfo != nullptr)
+    {
+        if(thisInfo->ShowClasses() != TShowKind::Parent)
+            rootInfo = thisInfo;
+    }
+    return rootInfo;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+bool TCustInfo::CheckType(const TPropertyManager& value)
+{
+    switch(showClasses)
+    {
+        case TShowKind::All: return true;
+        case TShowKind::Select: return Info(value) != nullptr;
+        default : return false;
+    }
+}
+
+bool TCustInfo::CheckProp(const TString& value)
+{
+    switch(showProperty)
+    {
+        case TShowKind::All:
+            return true;
+
+        case TShowKind::Select:
+        {
+            auto it = props.find(value);
+            if (it != props.end())
+                return it->second;
+            return false;
+        }
+
+        default :
+            return false;
+    }
+}
+
+TCustInfo& TCustInfo::AddType(const TString &name, TShowKind value)
+{
+    const auto& man = TPropertyManager::Manager(name);
+    if(man.IsValid())
+        return types[&man] = TCustInfo().SetShowProperty(value);
+    else
+        return *this;
+}
+
+TCustInfo& TCustInfo::AddProp(const TString &name, bool visible)
 {
     props[name] = visible;
+    return *this;
 }
+
+TCustInfo &TCustInfo::AddProps(const TString &props)
+{
+    TVecString propInfos = Split(props, ',');
+    for(const auto& prop : propInfos)
+    {
+        TVecString propInfo = Split(prop, ':');
+        switch (propInfo.size())
+        {
+            case 1://указали просто имя
+                AddProp(Trim(propInfo[0]));
+                break;
+
+            case 2://указали имя и видимость
+                AddProp(Trim(propInfo[0]), TVariable(propInfo[1]).ToBool());
+                break;
+
+            default:
+                continue;
+        }
+    }
+    return *this;
+}
+
+TCustInfo &TCustInfo::AddTypeProp(const TString &name, const TString &props)
+{
+    return AddType(name, TShowKind::Select).AddProps(props);
+}
+
+TCustInfo* TCustInfo::Info(const TPropertyManager &value)
+{
+    auto it = types.find(&value);        //иначе ищим есть ли такой тип здесь
+    if(it != types.end()) return &it->second;
+
+    for (auto &it : types)
+    {
+        if (value.IsCustableTo(*it.first))
+            return &it.second;
+    }
+    return nullptr;
+}
+
+void TCustInfo::Clear()
+{
+    props.clear();
+    types.clear();
+}
+
+
+
+

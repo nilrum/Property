@@ -14,6 +14,7 @@ if(NOT TARGET PropertyTest)
     add_executable(PropertyTest ${PROPERTY_TESTS} ${INCL_PROPERTY_HDR})
     target_include_directories(PropertyTest PUBLIC ${GOOGLETEST_DIR}/include)
     target_link_libraries(PropertyTest PUBLIC Property gtest gtest_main gmock)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 endif()
 
 

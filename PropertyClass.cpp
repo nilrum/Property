@@ -32,7 +32,7 @@ TPropInfo &TPropertyManager::AddProperty(const TString &type, const TString &nam
 void TPropertyManager::AppendProperties(TPropertyManager &value)
 {
     baseManager = &value;
-    baseManager->AddChildManager(this);
+    baseManager->AddChildManager(*this);
 
     for (auto info : value.properties)
         AddProperty(TPropInfo(info));
@@ -151,24 +151,15 @@ const TPropertyManager &TPropertyManager::Manager(const TString &type)
     return Single<TPropertyManager>();
 }
 
-TPropertyManager *TPropertyManager::BaseManager() const
+void TPropertyManager::AddChildManager(TPropertyManager& value)
 {
-    return baseManager;
+    childManagers.emplace_back(&value);
 }
 
-TPropertyManager *TPropertyManager::ChildManager(int index) const
+bool TPropertyManager::IsCustableTo(const TPropertyManager &value) const
 {
-    return childManagers[index];
-}
-
-size_t TPropertyManager::CountChildManager() const
-{
-    return childManagers.size();
-}
-
-void TPropertyManager::AddChildManager(TPropertyManager *value)
-{
-    childManagers.emplace_back(value);
+    const auto& list = value.childManagers;
+    return std::find(list.begin(), list.end(), this) != value.childManagers.end();
 }
 
 //TPropertyClass

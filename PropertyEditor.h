@@ -9,43 +9,9 @@
 #include "PropertyClass.h"
 
 class TObjTree;
+class TCustInfo;
 using TFunUpdateTree = std::function<void(TObjTree* value)>;
 
-class TCustInfo{
-    bool isAllType = true;
-    bool isAllProperty = true;
-    bool isEdit = true;
-    std::map<TString, TCustInfo> types;
-    std::map<TString, bool> props;
-public:
-    inline bool IsAll() const { return isAllType || isAllProperty; }
-    inline bool IsAllType() const { return isAllType; }
-    inline bool IsAllProperty() const { return isAllProperty; }
-
-    inline void SetIsAll(bool value) { isAllType = isAllProperty = value; }
-    inline void SetIsAllType(bool value) { isAllType = value; }
-    inline void SetIsAllProperty(bool value) { isAllProperty = value; }
-
-    inline bool IsEdit() const { return isEdit; }
-    inline void SetIsEdit(bool value) { isEdit = value; }
-
-    TCustInfo& AddProp(const TString& name, bool visible);
-
-    bool CheckType(const TString& value)
-    {
-        if(isAllType) return true;          //если стоит флаг что показывать любой тип
-        auto it = types.find(value);        //иначе ищим есть ли такой тип здесь
-        if(it == types.end()) return false; //если не нашли значит такой тип не разрешен
-        return it->second.isAllProperty || props.size();//если нашли значит должен быть либо все свойства либо какие то из них
-    }
-    bool CheckProp(const TString& value)
-    {
-        if(isAllProperty) return true;
-        auto it = props.find(value);
-        if(it == props.end()) return false;
-        return it->second;
-    }
-};
 class TObjTree{
 public:
     TObjTree(const TPtrPropertyClass& value = TPtrPropertyClass(), TObjTree* parent = nullptr, int indProp = -1);
@@ -111,19 +77,74 @@ private:
     TChangeThePropertyClass funChecked;
     TChangeThePropertyClass FindFunChecked() const;
 
-    bool HasChild(const TVariable& value) const;
     bool HasChild(const TPtrPropertyClass& value) const;
 
-    bool CheckType(const TVariable& value) const;
-    bool CheckType(const TPtrPropertyClass& value) const;
+    TCustInfo* RootInfo() const;
+    TCustInfo* CustInfo(const TPropertyManager& man) const;
+};
 
-    bool CheckProp(const TPropInfo& vale) const;
+/*
+ * Варианты настройки отображения свойств и классов для корневого объекта (root)
+ *          1. Не добавлен ни какой тип,
+ *              1.1 свойство IsAllType == true -> Отображаются все объекты child которые есть у root
+ *                  1.1.1 без указания свойств у root
+ *                      1.1.1.1 свойство IsAllProp == true -> Отображаются все свойства которые есть у child
+ *                      1.1.1.2 свойство IsAllProp == false -> Не отображаются свойства которые есть у child
+ *                  1.1.2 с указанием свойств у root
+ *                      1.1.2.1 свойство IsAllProp == true -> Отображаются все свойства которые есть у child
+ *                      1.1.2.2 свойство IsAllProp == false -> Отображаются только те свойства у child которые добавлены
+ *              1.2 свойство IsAllType == false -> Не отображается ни один класс которые есть у root
+ *                  1.2.1 Так как классов нет свойств отображать не для чего
+ *          2. Добавлен тип
+ *              2.1 свойство IsAllType == true -> Отображаются все объекты child которые есть у root
+ *                  Аналогичен пункту 1.1
+ *              2.2 свойство IsAllType == false -> Отображаются все объекты данного типа или типы наследники которые есть у root
+ *                  2.2.1 Для типа не указаны свойства
+ *                      2.2.1.1 без указания свойств у root
+ *                          2.2.1.1.1 свойство IsAllProp == true -> Отображаются все свойства которые есть у child
+ *                          2.2.1.1.2 свойство IsAllProp == false -> Не отображаются свойства которые есть у child
+ *                      2.2.1.2 с указания свойств у root
+ *                          2.2.1.2.1 свойство IsAllProp == true -> Отображаются все свойства которые есть у child
+ *                          2.2.1.2.2 свойство IsAllProp == false -> Отображаются свойства которые есть у child указаные у root
+ *                  2.2.2 Для типа указаны свойства
+ *                      2.2.2.1 у типа IsAllProp  == true -> Отображаются все свойства которые есть у child
+ *                      2.2.2.2 у типа IsAllProp  == false -> Отображаются свойства которые есть у child указаныне у типа
+ *
+ * */
+enum class TShowKind{ All, None, Select, Parent};
+
+class TCustInfo{
+    TShowKind showClasses = TShowKind::All;
+    TShowKind showProperty = TShowKind::All;
+    TShowKind editProperty = TShowKind::None;
+    std::map<const TPropertyManager*, TCustInfo> types;
+    std::map<TString, bool> props;
+public:
+
+    inline TShowKind ShowClasses() const { return showClasses; }
+    inline TShowKind ShowProperty() const { return showProperty; }
+    inline TShowKind EditProperty() const { return editProperty; }
+
+    inline TCustInfo& SetShowClasses(TShowKind value)  { showClasses = value;  return *this; }
+    inline TCustInfo& SetShowProperty(TShowKind value) { showProperty = value; return *this; }
+    inline TCustInfo& SetEditProperty(TShowKind value) { editProperty = value; return *this; }
+
+    TCustInfo& AddType(const TString& name, TShowKind value = TShowKind::Parent);
+    TCustInfo& AddProp(const TString& name, bool visible = true);
+    TCustInfo& AddProps(const TString& props);
+    TCustInfo& AddTypeProp(const TString& name, const TString& props);
+
+    TCustInfo* Info(const TPropertyManager& value);
+    bool CheckType(const TPropertyManager& value);
+    bool CheckProp(const TString& value);
+
+    void Clear();
 };
 
 class TPropertyEditor{
 public:
     TPropertyEditor();
-
+    void Clear();
     virtual void SetObject(TPtrPropertyClass value);
 
     TPropertyEditor& SetIsAll(bool value = true);
@@ -137,9 +158,6 @@ public:
 
     TPropertyEditor& SetIsEdit(bool value = true);
     bool IsEdit() const;
-
-    TCustInfo& Type(const TString& type, bool IsAll = false);//добавляет тип вместе со всеми его свойствами
-    TPropertyEditor& Type(const TString& type, const TString);//добавляет тип вместе со всеми его свойствами
 
     TObjTree& Tree();
     TCustInfo& Info();

@@ -181,10 +181,9 @@ public:
     bool IsInit() const;
 
     void SetIsInit(bool value = true);
-    TPropertyManager* BaseManager() const;
-    TPropertyManager* ChildManager(int index) const;
-    size_t CountChildManager() const;
-    void AddChildManager(TPropertyManager* value);
+
+    void AddChildManager(TPropertyManager& value);
+    bool IsCustableTo(const TPropertyManager& value) const;//можно ли текущий менеджер привести к переданному(value is base class?)
 private:
     using THashProperties = std::map<TString, size_t>;
     using TProperties = std::vector<TPropInfo>;
