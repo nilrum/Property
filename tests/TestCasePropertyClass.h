@@ -31,21 +31,21 @@ public:
     TPtrPropertyClass ClassVar() const { return classVar; };
     void SetClassVar(const TPtrPropertyClass& value) { classVar = value; };
 
-    size_t CountChilds() const
+    size_t CountChildren() const
     {
-        return childs.size();
+        return children.size();
     };
-    TPtrPropertyClass Child(int index) const{ return childs[index]; };
+    TPtrPropertyClass Child(int index) const{ return children[index]; };
     TPtrPropertyClass AddChild(const TPtrPropertyClass& value)
     {
-        childs.push_back(value);
+        children.push_back(value);
         return value;
     };
     void DelChild(const TPtrPropertyClass& value)
     {
-        for(auto it = childs.begin(); it != childs.end(); it++)
+        for(auto it = children.begin(); it != children.end(); it++)
             if(*it == value) {
-                childs.erase(it);
+                children.erase(it);
                 break;
             }
     }
@@ -62,7 +62,7 @@ public:
            PROPERTY(double, doubleVar, DoubleVar, SetDoubleVar);
            PROPERTY(TPropertyClass, classVar, ClassVar, SetClassVar);
            PROPERTY(TPropertyInher2, classVar2, ClassVar2, SetClassVar2);
-           PROPERTY_ARRAY(TPropertyClass, childs, CountChilds, Child, AddChild, DelChild);
+           PROPERTY_ARRAY(TPropertyClass, children, CountChildren, Child, AddChild, DelChild);
            PROPERTY(TTestEnumInher, enumVar, EnumVar, SetEnumVar);
     )
 
@@ -74,7 +74,7 @@ private:
     TTestEnumInher enumVar = teOne;
     TPtrPropertyClass classVar = std::make_shared<TPropertyClass>();
     std::shared_ptr<TPropertyInher2> classVar2 = std::make_shared<TPropertyInher2>();
-    std::vector<TPtrPropertyClass> childs;
+    std::vector<TPtrPropertyClass> children;
 };
 
 

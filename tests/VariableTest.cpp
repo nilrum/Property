@@ -79,11 +79,11 @@ TEST(TestVariable, TestInitDouble) {
 TEST(TestVariable, TestInitBool){
 
     TVariable vf(false);
-    EXPECT_EQ(vf.Type(), TVariableType::vtUInt);
+    EXPECT_EQ(vf.Type(), TVariableType::vtBool);
     EXPECT_EQ(vf.ToInt(), 0);
     EXPECT_EQ(vf.ToDouble(), 0.);
     EXPECT_EQ(vf.ToBool(), false);
-    EXPECT_EQ(vf.ToString(), std::string("0"));
+    EXPECT_EQ(vf.ToString(), std::string("false"));
 
     TVariable vfs("0");
     EXPECT_EQ(vfs.Type(), TVariableType::vtStr);
@@ -93,11 +93,11 @@ TEST(TestVariable, TestInitBool){
     EXPECT_EQ(vfs.ToString(), std::string("0"));
 
     TVariable vt {true};
-    EXPECT_EQ(vt.Type(), TVariableType::vtUInt);
+    EXPECT_EQ(vt.Type(), TVariableType::vtBool);
     EXPECT_EQ(vt.ToInt(), 1);
     EXPECT_EQ(vt.ToDouble(), 1.);
     EXPECT_EQ(vt.ToBool(), true);
-    EXPECT_EQ(vt.ToString(), std::string("1"));
+    EXPECT_EQ(vt.ToString(), std::string("true"));
 
     TVariable vts("1");
     EXPECT_EQ(vts.Type(), TVariableType::vtStr);

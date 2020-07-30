@@ -9,15 +9,15 @@
 #include "PropertyClass.h"
 
 class TObjTree;
-class TCustInfo;
+class TCustClass;
 using TFunUpdateTree = std::function<void(TObjTree* value)>;
 
 class TObjTree{
 public:
     TObjTree(const TPtrPropertyClass& value = TPtrPropertyClass(), TObjTree* parent = nullptr, int indProp = -1);
     void Clear();//очищаем полностью объект
-    void ClearChilds();//очищаем объекты владения
-    void SetInfo(TCustInfo* value);
+    void ClearChildren();//очищаем объекты владения
+    void SetInfo(TCustClass* value);
     void SetObj(const TPtrPropertyClass& value);
     const TPtrPropertyClass& Obj() const;
     int IndProp() const;
@@ -25,16 +25,17 @@ public:
     void Load(bool refind = false);
 
     bool IsLoaded() const;
-    bool IsChilds() const;//отображает может ли быть объекты в childs
+    bool IsChildren() const;//отображает может ли быть объекты в children
     bool IsProp() const;  //отображает это свойство или класс
     bool IsCheckable() const;
     bool IsColor() const;
-    bool IsEnum() const;
+    bool IsBool() const;
+    bool IsEditable() const;
 
     size_t CountProps() const;
     TObjTree& Prop(int index);
 
-    size_t CountChilds() const;
+    size_t CountChildren() const;
     TObjTree& Child(int index);
     const TObjTree& Child(int index) const;
     void AddChild(TPtrPropertyClass value, int indProp);
@@ -57,12 +58,13 @@ public:
 
     bool IsChecked() const;
     void SetIsChecked(bool value);
-    //void SetFunChecked(TChangeThePropertyClass value);
     void SetFunUpdateTree(TFunUpdateTree value);
     using TVecObjTree = TPtrVector<TObjTree>;
+
+    TCustClass* ThisInfo() const;
 private:
     TObjTree* parent = nullptr;
-    TCustInfo* info = nullptr;
+    TCustClass* info = nullptr;
     TFunUpdateTree update;
     TPtrPropertyClass obj;
     TIdConnect idChange;
@@ -72,73 +74,70 @@ private:
     TFunUpdateTree GetFunUpdate();
 
     TVecObjTree props;
-    TVecObjTree childs;
+    TVecObjTree children;
     bool isLoaded = false;
     TChangeThePropertyClass funChecked;
     TChangeThePropertyClass FindFunChecked() const;
 
     bool HasChild(const TPtrPropertyClass& value) const;
 
-    TCustInfo* RootInfo() const;
-    TCustInfo* CustInfo(const TPropertyManager& man) const;
+    TCustClass* RootInfo() const;
+    TCustClass* CustInfo(const TPropertyManager& man) const;
 };
 
-/*
- * Варианты настройки отображения свойств и классов для корневого объекта (root)
- *          1. Не добавлен ни какой тип,
- *              1.1 свойство IsAllType == true -> Отображаются все объекты child которые есть у root
- *                  1.1.1 без указания свойств у root
- *                      1.1.1.1 свойство IsAllProp == true -> Отображаются все свойства которые есть у child
- *                      1.1.1.2 свойство IsAllProp == false -> Не отображаются свойства которые есть у child
- *                  1.1.2 с указанием свойств у root
- *                      1.1.2.1 свойство IsAllProp == true -> Отображаются все свойства которые есть у child
- *                      1.1.2.2 свойство IsAllProp == false -> Отображаются только те свойства у child которые добавлены
- *              1.2 свойство IsAllType == false -> Не отображается ни один класс которые есть у root
- *                  1.2.1 Так как классов нет свойств отображать не для чего
- *          2. Добавлен тип
- *              2.1 свойство IsAllType == true -> Отображаются все объекты child которые есть у root
- *                  Аналогичен пункту 1.1
- *              2.2 свойство IsAllType == false -> Отображаются все объекты данного типа или типы наследники которые есть у root
- *                  2.2.1 Для типа не указаны свойства
- *                      2.2.1.1 без указания свойств у root
- *                          2.2.1.1.1 свойство IsAllProp == true -> Отображаются все свойства которые есть у child
- *                          2.2.1.1.2 свойство IsAllProp == false -> Не отображаются свойства которые есть у child
- *                      2.2.1.2 с указания свойств у root
- *                          2.2.1.2.1 свойство IsAllProp == true -> Отображаются все свойства которые есть у child
- *                          2.2.1.2.2 свойство IsAllProp == false -> Отображаются свойства которые есть у child указаные у root
- *                  2.2.2 Для типа указаны свойства
- *                      2.2.2.1 у типа IsAllProp  == true -> Отображаются все свойства которые есть у child
- *                      2.2.2.2 у типа IsAllProp  == false -> Отображаются свойства которые есть у child указаныне у типа
- *
- * */
-enum class TShowKind{ All, None, Select, Parent};
+enum class TShowKind{
+    All,        //отображать все значения
+    None,       //не отображать ничего
+    Select,     //отображать или нет указано в свойстве
+    Parent,      //отображать в зависимости от родительского элемента
+    Function    //отображать или нет решает функция
+};
 
-class TCustInfo{
+using TCheckPropFun = std::function<bool(TPropertyClass*, const TString&)>;
+
+struct TCustProp{
+    bool visible = true;
+    TString format;
+    double min = NAN;
+    double max = NAN;
+    TCustProp& SetVisible(bool value) { visible = value; return *this; }
+    TCustProp& SetFormat(const TString& value) { format = value; return *this; }
+    TCustProp& SetMin(double value) { min = value; return *this; }
+    TCustProp& SetMax(double value) { max = value; return *this; }
+};
+
+class TCustClass{
     TShowKind showClasses = TShowKind::All;
     TShowKind showProperty = TShowKind::All;
     TShowKind editProperty = TShowKind::None;
-    std::map<const TPropertyManager*, TCustInfo> types;
-    std::map<TString, bool> props;
+    std::map<const TPropertyManager*, TCustClass> types;
+    std::map<TString, TCustProp> props;
+    TString valueClassProperty = "name";
+    TCheckPropFun checkPropFun;
 public:
 
     inline TShowKind ShowClasses() const { return showClasses; }
     inline TShowKind ShowProperty() const { return showProperty; }
     inline TShowKind EditProperty() const { return editProperty; }
+    inline TString ValueClassProperty() const { return valueClassProperty; }
 
-    inline TCustInfo& SetShowClasses(TShowKind value)  { showClasses = value;  return *this; }
-    inline TCustInfo& SetShowProperty(TShowKind value) { showProperty = value; return *this; }
-    inline TCustInfo& SetEditProperty(TShowKind value) { editProperty = value; return *this; }
+    inline TCustClass& SetShowClasses(TShowKind value)  { showClasses = value;  return *this; }
+    inline TCustClass& SetShowProperty(TShowKind value) { showProperty = value; return *this; }
+    inline TCustClass& SetEditProperty(TShowKind value) { editProperty = value; return *this; }
+    inline TCustClass& SetValueClassProperty(const TString& value) { valueClassProperty = value; return *this; }
+    inline TCustClass& SetCheckPropFun(const TCheckPropFun& value) { checkPropFun = value; return *this; }
 
-    TCustInfo& AddType(const TString& name, TShowKind value = TShowKind::Parent);
-    TCustInfo& AddProp(const TString& name, bool visible = true);
-    TCustInfo& AddProps(const TString& props);
-    TCustInfo& AddTypeProp(const TString& name, const TString& props);
+    TCustClass& AddType(const TString& typeName, TShowKind value = TShowKind::Parent);
+    TCustProp& AddProp(const TString& propName, bool visible = true);
+    TCustClass& AddProps(const TString& props);
+    TCustClass& AddTypeProp(const TString& typeName, const TString& props);
 
-    TCustInfo* Info(const TPropertyManager& value);
+    TCustClass* Info(const TPropertyManager& value);
     bool CheckType(const TPropertyManager& value);
-    bool CheckProp(const TString& value);
+    bool CheckProp(TPropertyClass* obj, const TString& value);
 
     void Clear();
+    TCustProp& CustProp(const TString& value);
 };
 
 class TPropertyEditor{
@@ -160,10 +159,10 @@ public:
     bool IsEdit() const;
 
     TObjTree& Tree();
-    TCustInfo& Info();
+    TCustClass& Info();
 protected:
     TPtrPropertyClass obj;
-    TCustInfo info;
+    TCustClass info;
     TObjTree tree;
 };
 

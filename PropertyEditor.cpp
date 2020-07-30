@@ -65,7 +65,7 @@ TObjTree &TPropertyEditor::Tree()
     return tree;
 }
 
-TCustInfo &TPropertyEditor::Info()
+TCustClass &TPropertyEditor::Info()
 {
     return info;
 }
@@ -84,15 +84,15 @@ TObjTree::TObjTree(const TPtrPropertyClass &value, TObjTree* p, int ind):parent(
 
 void TObjTree::Clear()
 {
-    ClearChilds();
+    ClearChildren();
     props.clear();
     idChange.disconnect();
     obj.reset();
 }
 
-void TObjTree::ClearChilds()
+void TObjTree::ClearChildren()
 {
-    childs.clear();
+    children.clear();
     isLoaded = false;
 }
 
@@ -102,10 +102,10 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
     if(obj == nullptr || IsProp()) return;
     idChange = obj->OnChange().connect([this](){ CallUpdate(); });
     const TPropertyManager& man = value->Manager();
-    TCustInfo* thisInfo = CustInfo(man);
+    TCustClass* thisInfo = CustInfo(man);
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив
-            if(thisInfo->CheckProp(man.Property(i).Name()))
+            if(thisInfo->CheckProp(obj.get(), man.Property(i).Name()))
                 props.emplace_back(obj, this, i);
 }
 
@@ -125,7 +125,7 @@ bool TObjTree::HasChild(const TPtrPropertyClass &value) const
     if(value == nullptr) return false;
     const TPropertyManager& man = value->Manager();
 
-    TCustInfo* thisInfo = CustInfo(man);
+    TCustClass* thisInfo = CustInfo(man);
 
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod() == false)//если есть свойства класс или массив
@@ -157,19 +157,19 @@ TObjTree &TObjTree::Prop(int index)
     return props[index];
 }
 
-size_t TObjTree::CountChilds() const
+size_t TObjTree::CountChildren() const
 {
-    return childs.size();
+    return children.size();
 }
 
 TObjTree &TObjTree::Child(int index)
 {
-    return childs[index];
+    return children[index];
 }
 
 const TObjTree &TObjTree::Child(int index) const
 {
-    return childs[index];
+    return children[index];
 }
 
 void TObjTree::AddChild(TPtrPropertyClass value, int indProp)
@@ -190,17 +190,17 @@ void TObjTree::DelChild(TObjTree* value)
 void TObjTree::Load(bool refind)
 {
     if(isLoaded && refind == false) return;
-    ClearChilds();
+    ClearChildren();
     if(obj == nullptr) return;
     const TPropertyManager& man = obj->Manager();
-    TCustInfo* thisInfo = CustInfo(man);
+    TCustClass* thisInfo = CustInfo(man);
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsClass())//если свойства класс
         {
             TPtrPropertyClass ptr = VariableToPropClass(obj->ReadProperty(i));
             if(ptr == nullptr) continue;
             if(thisInfo->CheckType(ptr->Manager()))
-                childs.emplace_back(ptr, this, i);
+                children.emplace_back(ptr, this, i);
         }
         else if(man.Property(i).IsArray())
             {
@@ -210,7 +210,7 @@ void TObjTree::Load(bool refind)
                     TPtrPropertyClass ptr = VariableToPropClass(obj->ReadFromArray(i, j));
                     if(ptr == nullptr) continue;
                     if(thisInfo->CheckType(ptr->Manager()))
-                        childs.emplace_back(ptr, this, i);
+                        children.emplace_back(ptr, this, i);
                 }
             }
     isLoaded = true;
@@ -221,7 +221,7 @@ bool TObjTree::IsLoaded() const
     return isLoaded;
 }
 
-bool TObjTree::IsChilds() const
+bool TObjTree::IsChildren() const
 {
     if(indProp != -1 && parent->Obj()->Manager().Property(indProp).IsPod()) return false;
     return HasChild(obj);
@@ -237,10 +237,16 @@ bool TObjTree::IsColor() const
     return IsProp() && parent->Obj()->Manager().Property(indProp).Type() == "TColor";
 }
 
-bool TObjTree::IsEnum() const
+bool TObjTree::IsBool() const
 {
-    return false;
+    return IsProp() && parent->Obj()->Manager().Property(indProp).Type() == "bool";
 }
+
+bool TObjTree::IsEditable() const
+{
+    return IsProp() && parent->Obj()->Manager().Property(indProp).IsReadOnly() == false;
+}
+
 
 TObjTree *TObjTree::Parent()
 {
@@ -250,7 +256,7 @@ TObjTree *TObjTree::Parent()
 int TObjTree::Num(int def) const
 {
     if(parent)
-        for(size_t i = 0; i < parent->CountChilds(); i++)
+        for(size_t i = 0; i < parent->CountChildren(); i++)
             if(&parent->Child(i) == this) return i;
     return def;
 }
@@ -258,7 +264,7 @@ int TObjTree::Num(int def) const
 int TObjTree::LoadedCount()
 {
     if(isLoaded == false) Load();
-    return CountChilds();
+    return CountChildren();
 }
 
 TString TObjTree::Name() const
@@ -287,7 +293,7 @@ TVariable TObjTree::Value(bool isType) const
         if(isType)
             return (obj->TypeClass() + "::" + obj->Name()).c_str();
         else
-            return TString();
+            return obj->ReadProperty(RootInfo()->ValueClassProperty());
     }
 }
 
@@ -356,22 +362,22 @@ TFunUpdateTree TObjTree::GetFunUpdate()
     return update;
 }
 
-void TObjTree::SetInfo(TCustInfo *value)
+void TObjTree::SetInfo(TCustClass *value)
 {
     info = value;
 }
 
-TCustInfo* TObjTree::RootInfo() const
+TCustClass* TObjTree::RootInfo() const
 {
     if(parent) return parent->RootInfo();
     if(info) return info;
-    return &Single<TCustInfo>();
+    return &Single<TCustClass>();
 }
 
-TCustInfo *TObjTree::CustInfo(const TPropertyManager &man) const
+TCustClass *TObjTree::CustInfo(const TPropertyManager &man) const
 {
-    TCustInfo* rootInfo = RootInfo();
-    TCustInfo* thisInfo = rootInfo->Info(man);
+    TCustClass* rootInfo = RootInfo();
+    TCustClass* thisInfo = rootInfo->Info(man);
     if(thisInfo != nullptr)
     {
         if(thisInfo->ShowClasses() != TShowKind::Parent)
@@ -380,9 +386,17 @@ TCustInfo *TObjTree::CustInfo(const TPropertyManager &man) const
     return rootInfo;
 }
 
+TCustClass *TObjTree::ThisInfo() const
+{
+    return CustInfo(obj->Manager());
+}
+
+
+
+
 //----------------------------------------------------------------------------------------------------------------------
 
-bool TCustInfo::CheckType(const TPropertyManager& value)
+bool TCustClass::CheckType(const TPropertyManager& value)
 {
     switch(showClasses)
     {
@@ -392,7 +406,7 @@ bool TCustInfo::CheckType(const TPropertyManager& value)
     }
 }
 
-bool TCustInfo::CheckProp(const TString& value)
+bool TCustClass::CheckProp(TPropertyClass* obj, const TString& value)
 {
     switch(showProperty)
     {
@@ -403,61 +417,70 @@ bool TCustInfo::CheckProp(const TString& value)
         {
             auto it = props.find(value);
             if (it != props.end())
-                return it->second;
+                return it->second.visible;
             return false;
         }
-
+        case TShowKind::Function:
+            if(checkPropFun)
+                return checkPropFun(obj, value);
+            else
+                return false;
         default :
             return false;
     }
 }
 
-TCustInfo& TCustInfo::AddType(const TString &name, TShowKind value)
+TCustClass& TCustClass::AddType(const TString &typeName, TShowKind value)
 {
-    const auto& man = TPropertyManager::Manager(name);
+    const auto& man = TPropertyManager::Manager(typeName);
     if(man.IsValid())
-        return types[&man] = TCustInfo().SetShowProperty(value);
+        return types[&man] = TCustClass().SetShowProperty(value);
     else
         return *this;
 }
 
-TCustInfo& TCustInfo::AddProp(const TString &name, bool visible)
+TCustProp& TCustClass::AddProp(const TString &propName, bool visible)
 {
-    props[name] = visible;
-    return *this;
+    TCustProp& res = props[propName];
+    res.visible = visible;
+    return res;
 }
 
-TCustInfo &TCustInfo::AddProps(const TString &props)
+TCustClass &TCustClass::AddProps(const TString &props)
 {
     TVecString propInfos = Split(props, ',');
     for(const auto& prop : propInfos)
     {
         TVecString propInfo = Split(prop, ':');
-        switch (propInfo.size())
+        if(propInfo.size() == 0) continue;
+        TCustProp& cust = AddProp(Trim(propInfo[0]));
+        for(size_t i = 1; i < propInfo.size(); i++)
         {
-            case 1://указали просто имя
-                AddProp(Trim(propInfo[0]));
-                break;
-
-            case 2://указали имя и видимость
-                AddProp(Trim(propInfo[0]), TVariable(propInfo[1]).ToBool());
-                break;
-
-            default:
-                continue;
+            TString& pi = propInfo[i];
+            if (pi[0] == '[')
+            {
+                //убираем скобки и делим на мин макс
+                TVecString minmax = Split(pi.substr(1, pi.size() - 2), ';');
+                if(minmax.size()) cust.SetMin(std::stod(minmax[0]));
+                if(minmax.size() > 1) cust.SetMax(std::stod(minmax[1]));
+            }
+            else if (pi[0] == '%')
+                cust.SetFormat(propInfo[i]);
+            else
+                cust.SetVisible(TVariable(pi).ToBool());
         }
     }
     return *this;
 }
 
-TCustInfo &TCustInfo::AddTypeProp(const TString &name, const TString &props)
+TCustClass &TCustClass::AddTypeProp(const TString &typeName, const TString &props)
 {
-    return AddType(name, TShowKind::Select).AddProps(props);
+    return AddType(typeName, TShowKind::Select).AddProps(props);
 }
 
-TCustInfo* TCustInfo::Info(const TPropertyManager &value)
+TCustClass* TCustClass::Info(const TPropertyManager &value)
 {
-    auto it = types.find(&value);        //иначе ищим есть ли такой тип здесь
+    auto it = types.find(&value);        //ищим есть ли такой тип здесь
     if(it != types.end()) return &it->second;
 
     for (auto &it : types)
@@ -468,10 +491,17 @@ TCustInfo* TCustInfo::Info(const TPropertyManager &value)
     return nullptr;
 }
 
-void TCustInfo::Clear()
+void TCustClass::Clear()
 {
     props.clear();
     types.clear();
+}
+
+TCustProp &TCustClass::CustProp(const TString &value)
+{
+    auto it = props.find(value);
+    if(it != props.end()) return it->second;
+    return Single<TCustProp>();
 }
 
 

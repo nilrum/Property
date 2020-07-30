@@ -22,7 +22,7 @@ TEST(TestPropertyEditor, TestSetObjectSimple)
 
     EXPECT_EQ(tree.IndProp(), -1);
     EXPECT_EQ(tree.IsLoaded(), false);//объекты не загружены
-    EXPECT_EQ(tree.IsChilds(), false);//объектов свойтсв нету
+    EXPECT_EQ(tree.IsChildren(), false);//объектов свойтсв нету
     EXPECT_EQ(tree.IsProp(), false);
 
     EXPECT_EQ(tree.Name(), TString("Name"));
@@ -49,8 +49,8 @@ TEST(TestPropertyEditor, TestSetObjectSimple)
     edit.Tree().Load();
     EXPECT_EQ(tree.CountProps(), 2);
     EXPECT_TRUE(tree.IsLoaded());//объекты загружены
-    EXPECT_FALSE(tree.IsChilds());//объектов свойтсв нету
-    EXPECT_EQ(tree.CountChilds(), 0);
+    EXPECT_FALSE(tree.IsChildren());//объектов свойтсв нету
+    EXPECT_EQ(tree.CountChildren(), 0);
 }
 
 TEST(TestPropertyEditor, TestSetObjectNoObjects)
@@ -65,15 +65,15 @@ TEST(TestPropertyEditor, TestSetObjectNoObjects)
 
     EXPECT_EQ(tree.CountProps(), 6);
     EXPECT_EQ(tree.IsLoaded(), false);//объекты не загружены
-    EXPECT_EQ(tree.IsChilds(), false);//объекты свойтсва есть но объектов в них нету
-    EXPECT_EQ(tree.CountChilds(), 0);
+    EXPECT_EQ(tree.IsChildren(), false);//объекты свойтсва есть но объектов в них нету
+    EXPECT_EQ(tree.CountChildren(), 0);
 
     tree.Load();
 
     EXPECT_EQ(tree.CountProps(), 6);
     EXPECT_TRUE(tree.IsLoaded());//объекты загружены
-    EXPECT_FALSE(tree.IsChilds());//объекты свойтсва есть но объектов в них нету
-    EXPECT_EQ(tree.CountChilds(), 0);
+    EXPECT_FALSE(tree.IsChildren());//объекты свойтсва есть но объектов в них нету
+    EXPECT_EQ(tree.CountChildren(), 0);
 }
 
 TEST(TestPropertyEditor, TestSetObject)
@@ -85,15 +85,15 @@ TEST(TestPropertyEditor, TestSetObject)
 
     EXPECT_EQ(tree.CountProps(), 6);
     EXPECT_EQ(tree.IsLoaded(), false);//объекты не загружены
-    EXPECT_EQ(tree.IsChilds(), true);//объекты свойтсва есть и объекты есть
-    EXPECT_EQ(tree.CountChilds(), 0);//но они пока не загружены
+    EXPECT_EQ(tree.IsChildren(), true);//объекты свойтсва есть и объекты есть
+    EXPECT_EQ(tree.CountChildren(), 0);//но они пока не загружены
 
     edit.Tree().Load();
 
     EXPECT_EQ(tree.CountProps(), 6);
     EXPECT_EQ(tree.IsLoaded(), true);//объекты загружены
-    EXPECT_EQ(tree.IsChilds(), true);//объекты свойтсва есть
-    EXPECT_EQ(tree.CountChilds(), 2);
+    EXPECT_EQ(tree.IsChildren(), true);//объекты свойтсва есть
+    EXPECT_EQ(tree.CountChildren(), 2);
 
     EXPECT_EQ(tree.Child(0).IsProp(), false);
     EXPECT_EQ(tree.Child(0).IndProp(), 5);
@@ -111,11 +111,11 @@ TEST(TestPropertyEditor, TestSetObject)
 
     obj->AddChild(std::make_shared<TPropertyClass>());
     edit.Tree().Load(true);
-    EXPECT_EQ(tree.CountChilds(), 3);
+    EXPECT_EQ(tree.CountChildren(), 3);
 
     EXPECT_EQ(tree.Child(2).IsProp(), false);
     EXPECT_EQ(tree.Child(2).IndProp(), 7);
-    EXPECT_EQ(tree.Child(2).Name(), TString("childs"));
+    EXPECT_EQ(tree.Child(2).Name(), TString("children"));
     EXPECT_EQ(tree.Child(2).Value().ToString(), TString("TPropertyClass::"));
     EXPECT_EQ(tree.Child(2).Parent(), &tree);
     EXPECT_EQ(tree.Child(2).Num(), 2);
@@ -158,7 +158,7 @@ TEST(TestPropertyEditor, TestListArrayProps)
     TObjTree & tree = edit.Tree();
     TObjTree::TVectArrayInfo info = tree.ArrayInfo();
     EXPECT_EQ(info.size(), 1);
-    EXPECT_EQ(std::get<0>(info[0]),  TString("childs"));
+    EXPECT_EQ(std::get<0>(info[0]),  TString("children"));
     EXPECT_EQ(std::get<1>(info[0]),  7);
 }
 
@@ -172,7 +172,7 @@ TEST(TestPropertyEditor, TestNotAll)
 
     EXPECT_EQ(tree.IndProp(), -1);
     EXPECT_EQ(tree.IsLoaded(), false);//объекты не загружены
-    EXPECT_EQ(tree.IsChilds(), false);//объектов свойтсв нету
+    EXPECT_EQ(tree.IsChildren(), false);//объектов свойтсв нету
     EXPECT_EQ(tree.IsProp(), false);
 
     EXPECT_EQ(tree.Name(), TString("Name"));

@@ -139,14 +139,16 @@ private:
     friend TEnumInfo;
     TEnum(const std::type_info* inf, int ind):info(inf), index(ind){}
 public:
-    TEnum(){}
+    TEnum(int i = 0):index(i) {}
     template <typename T, typename = std::enable_if_t<std::is_enum_v<T>>>
         TEnum(const T& value)
     {
         index = static_cast<int>(value);
         info = &typeid(T);
     }
-    inline void SetIndex(int value) { index = value; }
+    inline TEnum& SetIndex(int value) { index = value; return *this; }
+
+    operator int() const { return index; }
 
     inline bool IsValid() const { return info != nullptr; }
     inline int64_t Index() const { return index; }

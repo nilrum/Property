@@ -14,7 +14,9 @@ T VariableToPropertyClassImpl(const TVariable &value)
 template<typename T>
 struct TIsClass{
     using TCheck = typename std::decay<T>::type;
-    static const bool value = !(std::is_arithmetic<TCheck>::value || std::is_enum<TCheck>::value || std::is_same<TCheck, TString>::value || std::is_same<TCheck, char*>::value);
+    static const bool value = !(std::is_arithmetic<TCheck>::value || std::is_enum<TCheck>::value
+            || std::is_same<TCheck, TString>::value || std::is_same<TCheck, char*>::value
+            || std::is_same<TCheck, TEnum>::value);
 };
 
 template<typename T, typename R>
@@ -137,7 +139,9 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
 
 #define PROPERTIES(TYPE, BASE, ...) PROPERTIES_CREATE(TYPE, BASE, DEF_CREATE(TYPE), __VA_ARGS__)
 
-#define INIT_PROPERTYS(TYPE) namespace { const bool init##TYPE = TYPE::InitProperties(); }
+
+#define INIT_PROPERTYSN(NAME, TYPE) namespace { const bool init##NAME = TYPE::InitProperties(); }
+#define INIT_PROPERTYS(TYPE) INIT_PROPERTYSN(TYPE, TYPE)
 
 #define APROPERTY(TYPE, NAME) ManagerStatic().AddProperty(#TYPE, #NAME, TIsClass<TYPE>::value)
 #define PROPERTY_READ(TYPE, NAME, GET) APROPERTY(TYPE, NAME).Get(GetFun(&TYPENAME::GET))

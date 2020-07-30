@@ -176,19 +176,36 @@ bool RemoveValFor(TVec& vec, const typename TVec::value_type& val)
 template<class T>
 class TPtrVector{
 private:
+    using TVectData = std::vector<T*>;
+
     std::vector<T*> data;
+    struct TIterator{
+        typename TVectData::iterator data;
+        T& operator*() const { return **data; }
+        bool operator != (const TIterator& oth) const { return data != oth.data; }
+        void operator ++() { data++; }
+        T* operator ->() const{ return get(); }
+        T* get() const { return *data; }
+    };
 public:
     using value_type = T;
-    using iterator = typename std::vector<T*>::iterator;
+    using iterator = TIterator;
+
     ~TPtrVector()
     {
         clear();
     }
 
-    T& operator[] (int index){ return *data[index]; }
-    const T& operator[] (int index) const { return *data[index]; }
-    size_t size() const { return data.size(); }
+    inline T& operator[] (int index){ return *data[index]; }
+    inline const T& operator[] (int index) const { return *data[index]; }
+    inline size_t size() const { return data.size(); }
+    inline T& front() const { return *data.front(); }
+    inline T& back() const { return *data.back(); }
 
+    void push_back(const T& value)
+    {
+        push_back(new T(value));
+    }
     void push_back(T* value)
     {
         data.push_back(value);
@@ -207,25 +224,28 @@ public:
 
     iterator begin()
     {
-        return data.begin();
+        return iterator{ data.begin() };
     }
 
     iterator end()
     {
-        return data.end();
+        return iterator { data.end() };
     }
 
+    iterator insert(iterator it, const T& value)
+    {
+        return iterator{ data.insert(it.data, new T(value)) };
+    }
     void erase(iterator value)
     {
-        T* val = *value;
-        data.erase(value);
-        delete val;
+        delete value.get();
+        data.erase(value.data);
     }
     void erase(iterator b, iterator e)
     {
         for(iterator it = b; it != e; it++)
-            delete (*it);
-        data.erase(b, e);
+            delete it.get();
+        data.erase(b.data, e.data);
     }
 };
 

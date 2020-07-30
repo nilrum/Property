@@ -158,8 +158,18 @@ void TPropertyManager::AddChildManager(TPropertyManager& value)
 
 bool TPropertyManager::IsCustableTo(const TPropertyManager &value) const
 {
-    const auto& list = value.childManagers;
-    return std::find(list.begin(), list.end(), this) != value.childManagers.end();
+    if(this == &value) return true;
+    const auto& listChilds = value.childManagers;
+    if(std::find(listChilds.begin(), listChilds.end(), this) != listChilds.end())
+        return true;
+    for(const auto& m : listChilds)
+        if(IsCustableTo(*m) == true) return true;
+    return false;
+}
+
+TPropertyManager::TVecPropManList TPropertyManager::ListChildManagers() const
+{
+    return childManagers;
 }
 
 //TPropertyClass

@@ -60,6 +60,8 @@ std::string TVariable::TypeName() const
             return "string";
         case TVariableType::vtEnum:
             return "enum";
+        case TVariableType::vtBool:
+            return "bool";
         case TVariableType::vtExt:
             return std::any_cast<TEnum>(varValue).TypeEnum();
         default:
@@ -86,6 +88,8 @@ int64_t TVariable::ToInt() const
                 return std::stoll(std::any_cast<std::string>(varValue));
             case TVariableType::vtEnum:
                 return std::any_cast<TEnum>(varValue).Index();
+            case TVariableType::vtBool:
+                return std::any_cast<bool>(varValue);
         }
     }
     catch (std::invalid_argument)
@@ -111,6 +115,8 @@ uint64_t TVariable::ToUInt() const
                 return std::stoull(std::any_cast<std::string>(varValue));
             case TVariableType::vtEnum:
                 return std::any_cast<TEnum>(varValue).Index();
+            case TVariableType::vtBool:
+                return std::any_cast<bool>(varValue);
         }
     }
     catch (std::invalid_argument)
@@ -136,6 +142,8 @@ double TVariable::ToDouble() const
                 return std::stod(std::any_cast<std::string>(varValue));
             case TVariableType::vtEnum:
                 return double(std::any_cast<TEnum>(varValue).Index());
+            case TVariableType::vtBool:
+                return std::any_cast<bool>(varValue);
         }
     }
     catch (std::invalid_argument)
@@ -170,6 +178,8 @@ std::string TVariable::ToString() const
             return std::any_cast<std::string>(varValue);
         case TVariableType::vtEnum:
             return std::any_cast<TEnum>(varValue).Name();
+        case TVariableType::vtBool:
+            return ToBool() ? "true" : "false";
         default:
             return std::string();
     }
@@ -209,6 +219,12 @@ TVariable TVariable::FromData(const TVariableType &type, void *data, const size_
             return TVariable(value);
         }
 
+        case TVariableType::vtBool:
+        {
+            bool value = false;
+            memcpy(&value, data, sizeof(bool));
+            return TVariable(value);
+        }
         default:
             return TVariable();
     }
@@ -225,6 +241,7 @@ size_t TVariable::Size() const
         case TVariableType::vtStr: return std::any_cast<std::string>(varValue).size();
         case TVariableType::vtEnum: return sizeof(int32_t);
         case TVariableType::vtExt: return std::any_cast<TPtrVariableExt>(varValue)->Size();
+        case TVariableType::vtBool: return sizeof(bool);
         default: return 0;
     }
 }
@@ -237,38 +254,46 @@ std::vector<uint8_t> TVariable::ToData() const
         case TVariableType::vtInt:
         {
             int64_t value = ToInt();
-            std::vector<uint8_t> rez(sizeof(int64_t));
-            memcpy(&rez[0], &value, sizeof(int64_t));
-            return rez;
+            std::vector<uint8_t> res(sizeof(int64_t));
+            memcpy(&res[0], &value, sizeof(int64_t));
+            return res;
         }
         case TVariableType::vtUInt:
         {
             uint64_t value = ToUInt();
-            std::vector<uint8_t> rez(sizeof(uint64_t));
-            memcpy(&rez[0], &value, sizeof(uint64_t));
-            return rez;
+            std::vector<uint8_t> res(sizeof(uint64_t));
+            memcpy(&res[0], &value, sizeof(uint64_t));
+            return res;
         }
         case TVariableType::vtDouble:
         {
             double value = ToDouble();
-            std::vector<uint8_t> rez(sizeof(double));
-            memcpy(&rez[0], &value, sizeof(double));
-            return rez;
+            std::vector<uint8_t> res(sizeof(double));
+            memcpy(&res[0], &value, sizeof(double));
+            return res;
         }
         case TVariableType::vtEnum:
         {
             int32_t value = static_cast<int>(ToInt());
-            std::vector<uint8_t> rez(sizeof(int32_t));
-            memcpy(&rez[0], &value, sizeof(int32_t));
-            return rez;
+            std::vector<uint8_t> res(sizeof(int32_t));
+            memcpy(&res[0], &value, sizeof(int32_t));
+            return res;
         }
         case TVariableType::vtStr:
         {
             std::string value = ToString();
-            std::vector<uint8_t> rez(value.size());
-            memcpy(&rez[0], &value[0], value.size());
-            return rez;
+            std::vector<uint8_t> res(value.size());
+            memcpy(&res[0], &value[0], value.size());
+            return res;
         }
+
+        case TVariableType::vtBool:
+        {
+            std::vector<uint8_t> res(sizeof(bool));
+            res[0] = ToBool();
+            return res;
+        }
+
         case TVariableType::vtExt: return std::vector<uint8_t>();
 
         default: return std::vector<uint8_t>();

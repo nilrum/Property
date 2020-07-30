@@ -117,7 +117,7 @@ TEST(PropertyTest, TPropertyInher)
     EXPECT_EQ(a.IndexProperty("doubleVar"), 4);
     EXPECT_EQ(a.IndexProperty("classVar"), 5);
     EXPECT_EQ(a.IndexProperty("classVar2"), 6);
-    EXPECT_EQ(a.IndexProperty("childs"), 7);
+    EXPECT_EQ(a.IndexProperty("children"), 7);
     EXPECT_EQ(a.IndexProperty("enumVar"), 8);
     EXPECT_EQ(a.IndexProperty("notFind"), -1);
 
@@ -228,39 +228,39 @@ TEST(PropertyTest, TPropertyInher)
     EXPECT_EQ(inhrCast3->IntVar2(), 0);
 
     //index
-    EXPECT_EQ(a.CountChilds(), 0);
-    EXPECT_EQ(a.CountInArray("childs"), 0);
+    EXPECT_EQ(a.CountChildren(), 0);
+    EXPECT_EQ(a.CountInArray("children"), 0);
 
-    a.AddToArray("childs", PropertyClassToVariable(std::make_shared<TPropertyClass>()));
+    a.AddToArray("children", PropertyClassToVariable(std::make_shared<TPropertyClass>()));
 
-    EXPECT_EQ(a.CountChilds(), 1);
-    EXPECT_EQ(a.CountInArray("childs"), 1);
+    EXPECT_EQ(a.CountChildren(), 1);
+    EXPECT_EQ(a.CountInArray("children"), 1);
 
     a.Child(0)->SetName("childName");
-    TPtrPropertyClass child = VariableToPropClass(a.ReadFromArray("childs", 0));
+    TPtrPropertyClass child = VariableToPropClass(a.ReadFromArray("children", 0));
     ASSERT_TRUE(child);
     EXPECT_EQ(child->Name(), TString("childName"));
 
     a.AddToArray(7, PropertyClassToVariable(std::make_shared<TPropertyInher2>()));
-    EXPECT_EQ(a.CountInArray("childs"), 2);
+    EXPECT_EQ(a.CountInArray("children"), 2);
 
-    TPtrPropertyClass childInher = VariableToPropClass(a.ReadFromArray("childs", 1));
+    TPtrPropertyClass childInher = VariableToPropClass(a.ReadFromArray("children", 1));
     EXPECT_TRUE(childInher);
     EXPECT_EQ(childInher->Name(), TString(""));
     EXPECT_EQ(childInher->CountProperty(), 2);
 
     childInher->WriteProperty("intVar2", TVariable(70));
 
-    TPtrPropertyInher2 childInher2 = VariableCastTo<TPtrPropertyInher2>(a.ReadFromArray("childs", 1));
+    TPtrPropertyInher2 childInher2 = VariableCastTo<TPtrPropertyInher2>(a.ReadFromArray("children", 1));
     EXPECT_TRUE(childInher2);
     EXPECT_EQ(childInher2->Name(), TString(""));
     EXPECT_EQ(childInher2->ReadProperty("intVar2").ToInt(), 70);
 
-    a.DelFromArray("childs", PropertyClassToVariable(child));
-    EXPECT_EQ(a.CountInArray("childs"), 1);
+    a.DelFromArray("children", PropertyClassToVariable(child));
+    EXPECT_EQ(a.CountInArray("children"), 1);
 
-    a.DelFromArray("childs", PropertyClassToVariable(childInher));
-    EXPECT_EQ(a.CountInArray("childs"), 0);
+    a.DelFromArray("children", PropertyClassToVariable(childInher));
+    EXPECT_EQ(a.CountInArray("children"), 0);
 }
 
 TEST(PropertyTest, Serialization)
@@ -296,7 +296,7 @@ TEST(PropertyTest, Serialization)
     EXPECT_EQ(b.ClassVar()->Name(), TString("classVarName"));
     EXPECT_EQ(b.ClassVar2()->Name(), TString("classVar2Name"));
     EXPECT_EQ(b.ClassVar2()->IntVar2(), 30);
-    ASSERT_EQ(b.CountChilds(), 2);
+    ASSERT_EQ(b.CountChildren(), 2);
     EXPECT_EQ(b.Child(0)->Name(), TString("childInher"));
     EXPECT_EQ(b.Child(0)->ReadProperty("intVar2").ToInt(), 80);
     EXPECT_EQ(b.Child(1)->Name(), TString("childProp"));
@@ -314,17 +314,17 @@ TEST(PropertyTest, Serialization)
     EXPECT_EQ(c.ClassVar()->Name(), TString("classVarName"));
     EXPECT_EQ(c.ClassVar2()->Name(), TString("classVar2Name"));
     EXPECT_EQ(c.ClassVar2()->IntVar2(), 30);
-    ASSERT_EQ(c.CountChilds(), 2);
+    ASSERT_EQ(c.CountChildren(), 2);
     EXPECT_EQ(c.Child(0)->Name(), TString("childInher"));
     EXPECT_EQ(c.Child(0)->ReadProperty("intVar2").ToInt(), 80);
     EXPECT_EQ(c.Child(1)->Name(), TString("childProp"));
 
-    EXPECT_TRUE(ser.SavePropToFileName("prop_" + fileName, a, "childs"));
+    EXPECT_TRUE(ser.SavePropToFileName("prop_" + fileName, a, "children"));
 
     TPropertyInher d;
-    EXPECT_TRUE(ser.LoadPropFromFileName("prop_" + fileName, d, "childs"));
+    EXPECT_TRUE(ser.LoadPropFromFileName("prop_" + fileName, d, "children"));
 
-    ASSERT_EQ(d.CountChilds(), 2);
+    ASSERT_EQ(d.CountChildren(), 2);
     EXPECT_EQ(d.Child(0)->Name(), TString("childInher"));
     EXPECT_EQ(d.Child(0)->ReadProperty("intVar2").ToInt(), 80);
     EXPECT_EQ(d.Child(1)->Name(), TString("childProp"));
@@ -391,7 +391,7 @@ TEST(PropertyTest, Manager)
     EXPECT_EQ(infoArray.Name(), TString("propArray"));
     EXPECT_EQ(infoArray.Type(), TString("TPropertyClass"));
 
-    infoArray.GetArray(GetFun(&TPropertyInher::CountChilds), GetIndFun(&TPropertyInher::Child));
+    infoArray.GetArray(GetFun(&TPropertyInher::CountChildren), GetIndFun(&TPropertyInher::Child));
     EXPECT_EQ(infoArray.IsValid(), true);
     EXPECT_EQ(infoArray.IsReadOnly(), true);
     EXPECT_EQ(infoArray.IsStorable(), true);

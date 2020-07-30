@@ -181,8 +181,9 @@ public:
     bool IsInit() const;
 
     void SetIsInit(bool value = true);
-
+    using TVecPropManList = std::vector<TPropertyManager*>;
     void AddChildManager(TPropertyManager& value);
+    TVecPropManList ListChildManagers() const;
     bool IsCustableTo(const TPropertyManager& value) const;//можно ли текущий менеджер привести к переданному(value is base class?)
 private:
     using THashProperties = std::map<TString, size_t>;
@@ -192,7 +193,7 @@ private:
     STATIC(TManagers, All)
 
     TPropertyManager* baseManager = nullptr;
-    std::vector<TPropertyManager*> childManagers;
+    TVecPropManList childManagers;
 
     TString type;
     TFunCreate createTypeFun;
