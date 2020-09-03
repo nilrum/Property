@@ -211,20 +211,21 @@ private:
 
 #include <sigslot/signal.hpp>
 
-class TPropertyClass: public std::enable_shared_from_this<TPropertyClass>{
+class TPropertyClass: public std::enable_shared_from_this<TPropertyClass> {
 protected:
     TString name;
-    TChangePropertyClass change;
 public:
     PROPERTIES_BASE(TPropertyClass)
+
     static bool InitProperties() noexcept;
+
     static TPtrPropertyClass CreateFromType(const TString &type);
 
     virtual ~TPropertyClass() = default;
 
     TString TypeClass() const;
 
-    void SetName(const TString &value);
+    virtual void SetName(const TString &value);
     TString Name() const;
 
     int IndexProperty(const TString &nameProperty) const;
@@ -248,11 +249,12 @@ public:
     void DelFromArray(int index, const TVariable &value);
     void DelFromArray(const TString &nameProperty, const TVariable &value);
 
-    void Change();//оповестить тех кто подписан что объект изменился
-    TChangePropertyClass& OnChange();
+    TChangePropertyClass OnChanged;
+
+    bool IsCustToType(const TString &value) const;
+    bool IsCustToType(const TPropertyManager &value) const;
+
 };
-
-
 
 class TCommunicClass{
 private:
@@ -276,7 +278,7 @@ public:
 
     static TPtrPropertyClass FindCommun(const TString& name, bool autoCreate = false)
     {
-        for(auto v : Commun())
+        for(auto& v : Commun())
         {
             TPtrPropertyClass ptr = v.lock();
             if (ptr && ptr->Name() == name) return ptr;

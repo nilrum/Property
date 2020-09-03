@@ -129,7 +129,7 @@ public:
     operator double() const { return ToDouble(); }
     operator bool() const { return ToBool(); }
     operator std::string() const { return ToString(); }
-    operator TEnum() const { if(varType == TVariableType::vtEnum) return GetEnum(); return TEnum(ToInt()); }
+    operator TEnum() const { if(varType == TVariableType::vtEnum) return GetEnum(); return TEnum(int(ToInt())); }
 
     static TVariable FromData(const TVariableType& type, void* data, const size_t& count);
     template<typename T>

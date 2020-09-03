@@ -13,6 +13,7 @@ class TGlobalCustom : public TPropertyClass{
 public:
     TGlobalCustom();
 
+    TPtrPropertyClass FindCustom(const TString& path);
     STATIC_ARG(TPtrGlobalCustom, Single, std::make_shared<TGlobalCustom>());
     static bool Register(const TPtrPropertyClass& value);
 

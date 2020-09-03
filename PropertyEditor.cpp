@@ -5,7 +5,7 @@
 #include "PropertyEditor.h"
 TPropertyEditor::TPropertyEditor()
 {
-    tree.SetInfo(&info);
+    tree.SetCustomClass(&classCustoms);
 }
 
 TPropertyEditor &TPropertyEditor::SetIsAll(bool value)
@@ -22,35 +22,35 @@ bool TPropertyEditor::IsAll() const
 
 TPropertyEditor &TPropertyEditor::SetIsAllType(bool value)
 {
-    info.SetShowClasses(value ? TShowKind::All : TShowKind::Select);
+    classCustoms.SetShowClasses(value ? TShowKind::All : TShowKind::Select);
     return *this;
 }
 
 bool TPropertyEditor::IsAllType() const
 {
-    return info.ShowClasses() == TShowKind::All;
+    return classCustoms.ShowClasses() == TShowKind::All;
 }
 
 TPropertyEditor &TPropertyEditor::SetIsAllProperty(bool value)
 {
-    info.SetShowProperty(value ? TShowKind::All : TShowKind::Select);
+    classCustoms.SetShowProperty(value ? TShowKind::All : TShowKind::Select);
     return *this;
 }
 
 bool TPropertyEditor::IsAllProperty() const
 {
-    return info.ShowProperty() == TShowKind::All;
+    return classCustoms.ShowProperty() == TShowKind::All;
 }
 
 TPropertyEditor &TPropertyEditor::SetIsEdit(bool value)
 {
-    info.SetEditProperty(value ? TShowKind::All : TShowKind::None);
+    classCustoms.SetEditProperty(value ? TShowKind::All : TShowKind::None);
     return *this;
 }
 
 bool TPropertyEditor::IsEdit() const
 {
-    return info.EditProperty() == TShowKind::All;
+    return classCustoms.EditProperty() == TShowKind::All;
 }
 
 void TPropertyEditor::SetObject(TPtrPropertyClass value)
@@ -65,15 +65,20 @@ TObjTree &TPropertyEditor::Tree()
     return tree;
 }
 
-TCustClass &TPropertyEditor::Info()
+TCustClass &TPropertyEditor::ClassCustoms()
 {
-    return info;
+    return classCustoms;
 }
 
 void TPropertyEditor::Clear()
 {
     tree.Clear();
-    info.Clear();
+    classCustoms.Clear();
+}
+
+TPtrPropertyClass TPropertyEditor::Obj() const
+{
+    return tree.Obj();
 }
 
 //-------------------------------------TObjTree-------------------------------------------------------------------------
@@ -100,7 +105,7 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
 {
     obj = value;
     if(obj == nullptr || IsProp()) return;
-    idChange = obj->OnChange().connect([this](){ CallUpdate(); });
+    idChange = obj->OnChanged.connect(&TObjTree::CallUpdate, this);
     const TPropertyManager& man = value->Manager();
     TCustClass* thisInfo = CustInfo(man);
     for(size_t i = 0; i < man.CountProperty(); i++)
@@ -345,24 +350,24 @@ int TObjTree::LoadedCountAll()
     return CountProps() + LoadedCount();
 }
 
-void TObjTree::SetFunUpdateTree(TFunUpdateTree value)
+void TObjTree::SetOnUpdateTree(TOnUpdateTree value)
 {
     update = value;
 }
 
 void TObjTree::CallUpdate()
 {
-    TFunUpdateTree call = GetFunUpdate();
+    TOnUpdateTree call = GetFunUpdate();
     if(call) call(this);
 }
 
-TFunUpdateTree TObjTree::GetFunUpdate()
+TOnUpdateTree TObjTree::GetFunUpdate()
 {
     if(parent != nullptr) return parent->GetFunUpdate();
     return update;
 }
 
-void TObjTree::SetInfo(TCustClass *value)
+void TObjTree::SetCustomClass(TCustClass *value)
 {
     info = value;
 }
@@ -386,7 +391,7 @@ TCustClass *TObjTree::CustInfo(const TPropertyManager &man) const
     return rootInfo;
 }
 
-TCustClass *TObjTree::ThisInfo() const
+TCustClass *TObjTree::ClassCustoms() const
 {
     return CustInfo(obj->Manager());
 }
@@ -419,6 +424,13 @@ bool TCustClass::CheckProp(TPropertyClass* obj, const TString& value)
             if (it != props.end())
                 return it->second.visible;
             return false;
+        }
+        case TShowKind::SelTrue:
+        {
+            auto it = props.find(value);
+            if (it != props.end())
+                return it->second.visible;
+            return true;
         }
         case TShowKind::Function:
             if(checkPropFun)

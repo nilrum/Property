@@ -117,7 +117,7 @@ int TPropertyManager::ReadCountInArray(int index, const TPropertyClass *obj) con
 {
     if (CheckGet(index) && properties[index].IsArray())
         return properties[index].CallGetCountArray(obj);
-    return TVariable();
+    return 0;
 }
 
 TVariable TPropertyManager::ReadFromArray(int index, const TPropertyClass *obj, int indexArray) const
@@ -188,7 +188,6 @@ TPtrPropertyClass TPropertyClass::CreateFromType(const TString &type)
 
     return TPtrPropertyClass();
 }
-
 
 TString TPropertyClass::TypeClass() const
 {
@@ -275,14 +274,14 @@ void TPropertyClass::DelFromArray(const TString &nameProperty, const TVariable &
     DelFromArray(Manager().IndexProperty(nameProperty), value);
 }
 
-void TPropertyClass::Change()
+bool TPropertyClass::IsCustToType(const TString &value) const
 {
-    change();
+    return IsCustToType(TPropertyManager::Manager(value));
 }
 
-TChangePropertyClass &TPropertyClass::OnChange()
+bool TPropertyClass::IsCustToType(const TPropertyManager &value) const
 {
-    return change;
+    return Manager().IsCustableTo(value);
 }
 
 TVecString ListNames(const TPtrPropertyClass &value, const TString &listProp)

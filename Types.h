@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <array>
 #include <algorithm>
 #include <typeinfo>
 #include <cmath>
@@ -313,7 +314,7 @@ inline std::string StdFormat(int sizeBuf, const char* frmt,  ...)
 
 class TFormatDouble{
 private:
-    int maxEndCount;//максимум три знака после запятой
+    int maxEndCount;//максимум знаков после запятой
     int maxBegCount;//максимум пять знаков перед запятой
     int beginCheck;//для 5ти знаков будет максимальное 1000000
     int endCheck;
@@ -336,25 +337,32 @@ public:
         maxEndCount = maxEnd;
         maxBegCount = std::max(2, maxBeg);
 
-        beginCheck = std::pow(10, maxBegCount);
-        endCheck = std::pow(10, maxEndCount);
+        beginCheck = int(std::pow(10, maxBegCount));
+        endCheck = int(std::pow(10, maxEndCount));
     }
     TString Format(double value, double eps)
     {
-        if(eps > 1) return Format(value);
-
-        int begVal = value;
-        int endVal = (value - begVal + 0.0000001) * endCheck;
-        return std::to_string(begVal) + "." + std::to_string(endVal);
+        if(eps >= 1) return Round(value);
+        int begVal = int(value);
+        int endVal = int((value - begVal + 0.0000001) * endCheck);
+        int chk = 10;
+        int count = maxEndCount;
+        while(endVal % chk == 0 && count > 0)
+        {
+            count--;
+            chk *= 10;
+        }
+        return STDFORMAT("%.*f", count, value);
     }
-    TString Format( double value) const
+
+    TString Round(double value) const
     {
         if(std::isnan(value))
             return "nan";
         if(value < beginCheck)
         {
-            int begVal = value;
-            int endVal = (value - begVal + 0.0000001) * endCheck;
+            int begVal = int(value);
+            int endVal = int((value - begVal + 0.0000001) * endCheck);
 
             if(endVal)
             {
@@ -374,7 +382,7 @@ public:
             if(endVal == 0)
                 return std::to_string(begVal);
             else
-                return std::to_string(begVal) + "." + std::to_string(endVal);
+                return std::to_string(begVal) + "." + std::to_string(std::abs(endVal));
         }
         else
         {
@@ -388,17 +396,41 @@ public:
                 val = value / begin;
             }
             if(isUseUtf8 && pow < 10)
-                return Format(val) + TString((char*)textPows[pow - 2]);
+                return Round(val) + TString((char*)textPows[pow - 2]);
             else
-                return Format(val) + "*10^" + std::to_string(pow);
+                return Round(val) + "*10^" + std::to_string(pow);
         }
     }
 
     static TString Format(double value, int maxEnd, int maxBeg = 6)
     {
-        return TFormatDouble(maxEnd, maxBeg).Format(value);
+        return TFormatDouble(maxEnd, maxBeg).Round(value);
     }
 
+};
+
+inline bool TryStrToInt(const TString& str, int& value)
+{
+    try{
+        value = std::stoi(str);
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+template <typename Key, typename Value, std::size_t Size>
+struct TConstExprMap{
+    std::array<std::pair<Key, Value>, Size> data;
+    constexpr Value at(const Key& key) const{
+        const auto itr = std::find_if(data.begin(), data.end(),
+                                      [&key](const auto& p){ return p.first == key; });
+        if(itr != data.end())
+            return itr->second;
+        return Value();
+    }
 };
 
 

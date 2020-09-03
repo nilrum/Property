@@ -10,14 +10,14 @@
 
 class TObjTree;
 class TCustClass;
-using TFunUpdateTree = std::function<void(TObjTree* value)>;
+using TOnUpdateTree = std::function<void(TObjTree* value)>;
 
 class TObjTree{
 public:
     TObjTree(const TPtrPropertyClass& value = TPtrPropertyClass(), TObjTree* parent = nullptr, int indProp = -1);
     void Clear();//очищаем полностью объект
     void ClearChildren();//очищаем объекты владения
-    void SetInfo(TCustClass* value);
+    void SetCustomClass(TCustClass* value);
     void SetObj(const TPtrPropertyClass& value);
     const TPtrPropertyClass& Obj() const;
     int IndProp() const;
@@ -58,20 +58,20 @@ public:
 
     bool IsChecked() const;
     void SetIsChecked(bool value);
-    void SetFunUpdateTree(TFunUpdateTree value);
+    void SetOnUpdateTree(TOnUpdateTree value);
     using TVecObjTree = TPtrVector<TObjTree>;
 
-    TCustClass* ThisInfo() const;
+    TCustClass* ClassCustoms() const;
 private:
     TObjTree* parent = nullptr;
     TCustClass* info = nullptr;
-    TFunUpdateTree update;
+    TOnUpdateTree update;
     TPtrPropertyClass obj;
     TIdConnect idChange;
     int indProp = -1;
 
     void CallUpdate();
-    TFunUpdateTree GetFunUpdate();
+    TOnUpdateTree GetFunUpdate();
 
     TVecObjTree props;
     TVecObjTree children;
@@ -88,22 +88,27 @@ private:
 enum class TShowKind{
     All,        //отображать все значения
     None,       //не отображать ничего
-    Select,     //отображать или нет указано в свойстве
+    Select,     //отображать или нет указано в свойстве, если не найдено то не отображать
+    SelTrue,    //по умолчанию true
     Parent,      //отображать в зависимости от родительского элемента
     Function    //отображать или нет решает функция
 };
 
 using TCheckPropFun = std::function<bool(TPropertyClass*, const TString&)>;
+using TComboListFun = std::function<std::vector<TString>()>;
 
 struct TCustProp{
     bool visible = true;
     TString format;
     double min = NAN;
     double max = NAN;
+    TComboListFun comboFun;
     TCustProp& SetVisible(bool value) { visible = value; return *this; }
     TCustProp& SetFormat(const TString& value) { format = value; return *this; }
     TCustProp& SetMin(double value) { min = value; return *this; }
     TCustProp& SetMax(double value) { max = value; return *this; }
+    TCustProp& SetComboFun(const TComboListFun& value) { comboFun = value; return *this; }
+
 };
 
 class TCustClass{
@@ -127,7 +132,7 @@ public:
     inline TCustClass& SetValueClassProperty(const TString& value) { valueClassProperty = value; return *this; }
     inline TCustClass& SetCheckPropFun(const TCheckPropFun& value) { checkPropFun = value; return *this; }
 
-    TCustClass& AddType(const TString& typeName, TShowKind value = TShowKind::Parent);
+    TCustClass& AddType(const TString& typeName, TShowKind value);
     TCustProp& AddProp(const TString& propName, bool visible = true);
     TCustClass& AddProps(const TString& props);
     TCustClass& AddTypeProp(const TString& typeName, const TString& props);
@@ -146,6 +151,10 @@ public:
     void Clear();
     virtual void SetObject(TPtrPropertyClass value);
 
+    TPtrPropertyClass Obj() const;
+    TObjTree& Tree();
+    TCustClass& ClassCustoms();
+
     TPropertyEditor& SetIsAll(bool value = true);
     bool IsAll() const;
 
@@ -158,11 +167,9 @@ public:
     TPropertyEditor& SetIsEdit(bool value = true);
     bool IsEdit() const;
 
-    TObjTree& Tree();
-    TCustClass& Info();
 protected:
     TPtrPropertyClass obj;
-    TCustClass info;
+    TCustClass classCustoms;
     TObjTree tree;
 };
 

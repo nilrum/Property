@@ -95,8 +95,8 @@ TSetFun SetFun(R (T::*method)(P))
     };
 }
 //вариант для вызова с индексом по умолчанию
-template<typename T, typename R, typename P>
-TSetFun SetFun(R (T::*method)(int, P), int index)
+template<typename T, typename R, typename P, typename TInd>
+TSetFun SetFun(R (T::*method)(int, P), TInd index)
 {
     return [method, index](TPropertyClass *ptr, const TVariable &value) {
         T *obj = dynamic_cast<T *>(ptr);
@@ -104,10 +104,10 @@ TSetFun SetFun(R (T::*method)(int, P), int index)
     };
 }
 
-template<typename T, typename R>
-TGetIndFun GetIndFun(R (T::*method)(int) const)
+template<typename T, typename R, typename TInd>
+TGetIndFun GetIndFun(R (T::*method)(TInd) const)
 {
-    return [method](const TPropertyClass *ptr, int index) {
+    return [method](const TPropertyClass *ptr, TInd index) {
         const T *obj = dynamic_cast<const T *>(ptr);
         if (obj == nullptr) return TVariable();
         return PropertyClassToVariable((obj->*method)(index));
@@ -116,7 +116,8 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
 
 #define PROPERTIES_BASE_CHK(TYPE, CREATE, CHECK)\
     public:\
-        STATIC_ARG(TPropertyManager, ManagerStatic, #TYPE, CREATE)\
+        STATIC_ARG(TPropertyManager, ManagerStatic, #TYPE, CREATE) \
+        static TString TypeStatic() { return ManagerStatic().Type(); } \
         virtual TPropertyManager& Manager() CHECK { return TYPE::ManagerStatic(); }\
         virtual const TPropertyManager& Manager() const CHECK { return TYPE::ManagerStatic(); }\
         using TYPENAME = TYPE;\
@@ -169,7 +170,7 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
 #define PROPERTY_FUN_CHG(TYPE, NAME, GET, SET)\
     public:\
         TYPE GET() const { return NAME; };\
-        TYPENAME& SET(const TYPE& value) { bool chg = NAME != value; NAME = value; if(chg) Change(); return *this; }
+        TYPENAME& SET(const TYPE& value) { bool chg = NAME != value; NAME = value; if(chg) OnChanged(); return *this; }
 
 #define PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
     public:\
@@ -189,4 +190,4 @@ TGetIndFun GetIndFun(R (T::*method)(int) const)
 #define PROPERTY_ARRAY_FUN(TYPE, NAME, COUNT, GET, ADD, DEL)\
     PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL,)
 
-#define PROPERTY_ARRAY_FUN_CHG(TYPE, NAME, COUNT, GET, ADD, DEL) PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL, Change())
+#define PROPERTY_ARRAY_FUN_CHG(TYPE, NAME, COUNT, GET, ADD, DEL) PROPERTY_ARRAY_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, DEL, OnChanged())
