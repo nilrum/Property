@@ -423,7 +423,9 @@ inline bool TryStrToInt(const TString& str, int& value)
 
 template <typename Key, typename Value, std::size_t Size>
 struct TConstExprMap{
-    std::array<std::pair<Key, Value>, Size> data;
+    using TMapData = std::array<std::pair<Key, Value>, Size>;
+    TMapData data;
+    constexpr TConstExprMap(const TMapData& value):data(value){}
     constexpr Value at(const Key& key) const{
         const auto itr = std::find_if(data.begin(), data.end(),
                                       [&key](const auto& p){ return p.first == key; });

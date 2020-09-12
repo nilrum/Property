@@ -319,7 +319,7 @@ bool TSerializationBin::SaveToFile( const TString& path, const TPropertyClass& v
 
 void TSerializationBin::Save(const TPropertyClass *obj, FILE* file, const TString& rootName) const
 {
-    fpos_t posStart = 0;
+    /*fpos_t posStart = 0;
     std::fgetpos(file, &posStart);//сохраняем позицию в которой надо переписать
     TNode node = {rootName, obj->TypeClass(), kbClass, 0, 0};
     node.WriteNode(file);
@@ -363,12 +363,12 @@ void TSerializationBin::Save(const TPropertyClass *obj, FILE* file, const TStrin
     node.size = posFinish - posCalc;
     std::fseek(file, long(posStart), SEEK_SET);//переходим в начало для перезаписи
     node.WriteNode(file);
-    std::fseek(file, long(posStart), SEEK_SET);//переходим в конец
+    std::fseek(file, long(posStart), SEEK_SET);//переходим в конец*/
 }
 
 void TSerializationBin::SaveList(const TPropertyClass *obj, FILE* file, const TPropInfo &prop) const
 {
-    fpos_t posStart = 0;
+    /*fpos_t posStart = 0;
     std::fgetpos(file, &posStart);//сохраняем позицию в которой надо переписать
     TNode node = {prop.Name(), "list", kbList, 0, 0};
     node.WriteNode(file);
@@ -387,7 +387,7 @@ void TSerializationBin::SaveList(const TPropertyClass *obj, FILE* file, const TP
     node.size = posFinish - posCalc;
     std::fseek(file, long(posStart), SEEK_SET);//переходим в начало для перезаписи
     node.WriteNode(file);
-    std::fseek(file, long(posFinish), SEEK_SET);//переходим в конец
+    std::fseek(file, long(posFinish), SEEK_SET);//переходим в конец*/
 }
 
 bool TSerializationBin::LoadFromFile(const TString& path, TPropertyClass& value) const

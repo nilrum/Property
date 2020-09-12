@@ -314,6 +314,12 @@ public:
     }
 };
 
+template <typename T>
+std::shared_ptr<T> FindCommun(const TString& name, bool autoCreate = false)
+{
+    return std::dynamic_pointer_cast<T>(TCommunicClass::FindCommun(name, autoCreate));
+}
+
 using TPtrCommunicClass = std::shared_ptr<TCommunicClass>;
 
 template<typename T>
