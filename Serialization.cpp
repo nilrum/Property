@@ -311,7 +311,7 @@ protected:
 
 bool TSerializationBin::SaveToFile( const TString& path, const TPropertyClass& value)  const
 {
-    std::shared_ptr<FILE> file(std::fopen(path.c_str(), "wb"), [](FILE* file){ std::fclose(file); });
+    std::shared_ptr<FILE> file = OpenFile(path, false);
     if(file == nullptr) return false;
     Save(&value, file.get(), value.Name());
     return true;

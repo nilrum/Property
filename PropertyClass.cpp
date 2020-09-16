@@ -92,7 +92,7 @@ TVariable TPropertyManager::ReadProperty(int index, const TPropertyClass *obj) c
     return TVariable();
 }
 
-void TPropertyManager::WriteProperty(int index, TPropertyClass *obj, const TVariable &value)
+void TPropertyManager::WriteProperty(int index, TPropertyClass *obj, const TVariable &value) const
 {
     if (CheckSet(index))
         properties[index].CallSet(obj, value);
@@ -290,5 +290,33 @@ TVecString ListNames(const TPtrPropertyClass &value, const TString &listProp)
     TVecString res(value->CountInArray(index));
     for(size_t i = 0; i < res.size(); i++)
         res[i] = VariableToPropClass(value->ReadFromArray(index, i))->Name();
+    return res;
+}
+
+TPtrPropertyClass ClonePropertyClass(const TPtrPropertyClass &value)
+{
+    const TPropertyManager& man = value->Manager();
+    TPtrPropertyClass res = man.CreateObj();
+    for(size_t i = 0; i < man.CountProperty(); i++)
+    {
+        const TPropInfo & info = man.Property(i);
+        if (info.IsClass())
+        {
+            //читаем TVariable, получаем TPropClass, клонируем его, преобразуем в TVariable, записываем в проперти
+            TPtrPropertyClass cl = VariableToPropClass(info.CallGet(value.get()));
+            info.CallSet(res.get(), PropertyClassToVariable(ClonePropertyClass(cl)));
+        }
+        else if(info.IsArray())
+        {
+            size_t count = info.CallGetCountArray(value.get());
+            for(size_t j = 0; j < count; j++)
+            {
+                TPtrPropertyClass it = VariableToPropClass(info.CallGetArray(value.get(), j));
+                info.CallAddArray(res.get(), PropertyClassToVariable(ClonePropertyClass(it)));
+            }
+        }
+        else
+            info.CallSet(res.get(), info.CallGet(value.get()));
+    }
     return res;
 }

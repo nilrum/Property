@@ -627,8 +627,8 @@ TEST(TestFormatDouble, BigDouble)
 
 
 enum class TTypeErrors{Ok, Err1, Err2};
-REGISTER_CODES(TTypeErrors, Ok, "No errors")
-REGISTER_CODES(TTypeErrors, Err1, "Text for Err1")
+REGISTER_CODE(TTypeErrors, Ok, "No errors")
+REGISTER_CODE(TTypeErrors, Err1, "Text for Err1")
 
 TEST(Result, Init)
 {

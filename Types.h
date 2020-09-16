@@ -14,6 +14,7 @@
 #include <cmath>
 #include <math.h>
 #include <stdarg.h>
+#include <memory>
 
 using TString = std::string;
 using TVecString = std::vector<TString>;
@@ -147,11 +148,22 @@ private:
 };
 
 
-#define REGISTER_CODES(TYPE, CODE, TEXT)\
+#define REGISTER_CODE(TYPE, CODE, TEXT)\
     namespace{\
         const bool r##CODE = TResult::Register(typeid(TYPE), static_cast<int>(TYPE::CODE), TEXT);\
     }
-
+#define REGISTER_CODES(TYPE, ...)       \
+    namespace{                          \
+        using TResType = TYPE;          \
+        bool Fun##TYPE()                \
+        {                               \
+            __VA_ARGS__                 \
+            return true;                \
+        }                               \
+        const bool r##TYPE = Fun##TYPE();\
+    }
+#define TEXT_CODE(CODE, TEXT)\
+    TResult::Register(typeid(TResType), static_cast<int>(TResType::CODE), TEXT);
 
 template<typename TVec>
     bool RemoveVal(TVec& vec, const typename TVec::value_type& val)
@@ -435,5 +447,7 @@ struct TConstExprMap{
     }
 };
 
+
+std::shared_ptr<FILE> OpenFile(const std::string& path, bool isRead = true);
 
 #endif //TESTAPP_TYPES_H

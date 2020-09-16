@@ -30,4 +30,13 @@ private:
         const bool cust = TGlobalCustom::Register(VALUE);\
     }
 
+
+class TTargetCustom : public TPropertyClass{
+public:
+    virtual void LoadTarget(const TPtrPropertyClass& value){};//загружает объект настройками
+    virtual void SaveTarget(const TPtrPropertyClass& value){};//сохраняет настройки объекта
+
+    PROPERTIES(TTargetCustom, TPropertyClass,)
+};
+
 #endif //NEO_GLOBALCUSTOM_H

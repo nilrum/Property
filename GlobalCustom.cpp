@@ -5,6 +5,7 @@
 #include "GlobalCustom.h"
 
 INIT_PROPERTYS(TGlobalCustom);
+INIT_PROPERTYS(TTargetCustom);
 
 TGlobalCustom::TGlobalCustom()
 {

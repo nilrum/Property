@@ -170,7 +170,7 @@ public:
     size_t CountProperty() const;
 
     TVariable ReadProperty(int index, const TPropertyClass *obj) const;
-    void WriteProperty(int index, TPropertyClass *obj, const TVariable &value);
+    void WriteProperty(int index, TPropertyClass *obj, const TVariable &value) const;
 
     int ReadCountInArray(int index, const TPropertyClass *obj) const;
     TVariable ReadFromArray(int index, const TPropertyClass *obj, int indexArray) const;
@@ -364,6 +364,6 @@ template <typename T>
     }
 
 TVecString ListNames(const TPtrPropertyClass& value, const TString& listProp);
-
+TPtrPropertyClass ClonePropertyClass(const TPtrPropertyClass& value);
 
 #endif //TESTAPP_PROPERTYCLASS_H
