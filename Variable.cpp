@@ -4,6 +4,7 @@
 
 #include "Variable.h"
 #include <stdexcept>
+#include <cstring>
 
 TVariable::TVariable() : varType(TVariableType::vtNone) {}
 
