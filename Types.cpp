@@ -11,7 +11,7 @@ std::shared_ptr<FILE> OpenFile(const std::string& path, bool isRead)
 {
     FILE* f = nullptr;
 #ifndef _WIN32
-    std::fopen_s(&f, path.c_str(), (isRead) ? "rb" : "wb");
+    f = std::fopen(path.c_str(), (isRead) ? "rb" : "wb");
 #else
     std::wstring pathW;
     pathW.resize(path.size());
