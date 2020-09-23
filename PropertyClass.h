@@ -261,7 +261,7 @@ private:
     TWPtrPropertyClass commun;
 public:
     using TRegVector = std::vector<TWPtrPropertyClass>;
-    using TFunCreate = std::function<void(const TString& name)>;
+    using TFunCreate = std::function<TPtrPropertyClass(const TString& id)>;
     using TRegForCreate = std::map<TString, TFunCreate>;
     void CommunReg(const TWPtrPropertyClass& value)
     {
@@ -276,7 +276,7 @@ public:
 
     virtual TPtrPropertyClass FindInCommunic(const TString& value){ return TPtrPropertyClass(); }
 
-    static TPtrPropertyClass FindCommun(const TString& name, bool autoCreate = false)
+    static TPtrPropertyClass FindCommun(const TString& name, bool autoCreate = false, const TString& type = TString())
     {
         for(auto& v : Commun())
         {
@@ -284,17 +284,19 @@ public:
             if (ptr && ptr->Name() == name) return ptr;
         }
         if(autoCreate)
-        {
-            CreateReg(name);
-            return FindCommun(name, false);
-        }
+            return CreateReg(name, type);
+
         return TPtrPropertyClass();
     }
-    static void CreateReg(const TString& name)
+    static TPtrPropertyClass CreateReg(const TString& name, const TString& type)
     {
-        auto it = ForCreate().find(name);
+        TString id = type.empty() ? name : type;
+        auto it = ForCreate().find(id);
+        TPtrPropertyClass res;
         if(it != ForCreate().end())
-            it->second(name);
+            res = it->second(id);
+        if(res) res->SetName(name);
+        return res;
     }
     STATIC(TRegVector, Commun);
     STATIC(TRegForCreate, ForCreate);
@@ -315,9 +317,9 @@ public:
 };
 
 template <typename T>
-std::shared_ptr<T> FindCommun(const TString& name, bool autoCreate = false)
+std::shared_ptr<T> FindCommun(const TString& name, bool autoCreate = false, const TString& type = TString())
 {
-    return std::dynamic_pointer_cast<T>(TCommunicClass::FindCommun(name, autoCreate));
+    return std::dynamic_pointer_cast<T>(TCommunicClass::FindCommun(name, autoCreate, type));
 }
 
 using TPtrCommunicClass = std::shared_ptr<TCommunicClass>;

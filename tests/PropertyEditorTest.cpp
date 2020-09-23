@@ -187,7 +187,7 @@ TEST(TestPropertyEditor, TestNotAll)
     EXPECT_EQ(tree.CountProps(), 1);
     EXPECT_EQ(tree.Prop(0).Name(), "name");
 
-    edit.ClassCustoms().AddType("TPropertyInher2", TShowKind::Select).AddProp("intVar2");
+    edit.ClassCustoms().AddType("TPropertyInher2", TShowProp::Select).AddProp("intVar2");
     edit.SetObject(obj);
     EXPECT_EQ(tree.CountProps(), 1);
     EXPECT_EQ(tree.Prop(0).Name(), "intVar2");

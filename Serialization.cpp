@@ -392,7 +392,7 @@ void TSerializationBin::SaveList(const TPropertyClass *obj, FILE* file, const TP
 
 bool TSerializationBin::LoadFromFile(const TString& path, TPropertyClass& value) const
 {
-    std::shared_ptr<FILE> file(std::fopen(path.c_str(), "rb"), [](FILE* file){ std::fclose(file); });
+    std::shared_ptr<FILE> file = OpenFile(path);
     if(file == nullptr) return false;
     TNode node;
     node.ReadNode(file.get());

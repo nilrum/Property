@@ -22,35 +22,35 @@ bool TPropertyEditor::IsAll() const
 
 TPropertyEditor &TPropertyEditor::SetIsAllType(bool value)
 {
-    classCustoms.SetShowClasses(value ? TShowKind::All : TShowKind::Select);
+    classCustoms.SetShowClasses(value ? TShowClass::All : TShowClass::SelType);
     return *this;
 }
 
 bool TPropertyEditor::IsAllType() const
 {
-    return classCustoms.ShowClasses() == TShowKind::All;
+    return classCustoms.ShowClasses() == TShowClass::All;
 }
 
 TPropertyEditor &TPropertyEditor::SetIsAllProperty(bool value)
 {
-    classCustoms.SetShowProperty(value ? TShowKind::All : TShowKind::Select);
+    classCustoms.SetShowProperty(value ? TShowProp::All : TShowProp::Select);
     return *this;
 }
 
 bool TPropertyEditor::IsAllProperty() const
 {
-    return classCustoms.ShowProperty() == TShowKind::All;
+    return classCustoms.ShowProperty() == TShowProp::All;
 }
 
 TPropertyEditor &TPropertyEditor::SetIsEdit(bool value)
 {
-    classCustoms.SetEditProperty(value ? TShowKind::All : TShowKind::None);
+    classCustoms.SetEditProperty(value ? TShowProp::All : TShowProp::None);
     return *this;
 }
 
 bool TPropertyEditor::IsEdit() const
 {
-    return classCustoms.EditProperty() == TShowKind::All;
+    return classCustoms.EditProperty() == TShowProp::All;
 }
 
 void TPropertyEditor::SetObject(TPtrPropertyClass value)
@@ -107,7 +107,7 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
     if(obj == nullptr || IsProp()) return;
     idChange = obj->OnChanged.connect(&TObjTree::CallUpdate, this);
     const TPropertyManager& man = value->Manager();
-    TCustClass* thisInfo = CustInfo(man);
+    TCustClass* thisInfo = PropCustoms();//CustInfo(man, false);
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив
             if(thisInfo->CheckProp(obj.get(), man.Property(i).Name()))
@@ -119,7 +119,6 @@ const TPtrPropertyClass &TObjTree::Obj() const
     return obj;
 }
 
-
 int TObjTree::IndProp() const
 {
     return indProp;
@@ -130,25 +129,28 @@ bool TObjTree::HasChild(const TPtrPropertyClass &value) const
     if(value == nullptr) return false;
     const TPropertyManager& man = value->Manager();
 
-    TCustClass* thisInfo = CustInfo(man);
+    TCustClass* thisInfo = ClassCustoms(man, true);
 
     for(size_t i = 0; i < man.CountProperty(); i++)
-        if(man.Property(i).IsPod() == false)//если есть свойства класс или массив
+    {
+        const TPropInfo& info = man.Property(i);
+        if (info.IsPod() == false)//если есть свойства класс или массив
         {
             TVariable v;
-            if(man.Property(i).IsArray() == false)
+            if (info.IsArray() == false)
             {
                 v = value->ReadProperty(i);
             }
             else
             {
-                if(value->CountInArray(i))//если в массиве есть элементы
+                if (value->CountInArray(i))//если в массиве есть элементы
                     v = value->ReadFromArray(i, 0);
             }
             TPtrPropertyClass ptr = VariableToPropClass(v);
-            if(ptr == nullptr) continue;
-            if(thisInfo->CheckType(ptr->Manager())) return true;
+            if (ptr == nullptr) continue;
+            if (thisInfo->CheckType(ptr->Manager(), info.Name())) return true;
         }
+    }
     return false;
 }
 
@@ -198,26 +200,29 @@ void TObjTree::Load(bool refind)
     ClearChildren();
     if(obj == nullptr) return;
     const TPropertyManager& man = obj->Manager();
-    TCustClass* thisInfo = CustInfo(man);
+    TCustClass* thisInfo = ClassCustoms(man, true);
     for(size_t i = 0; i < man.CountProperty(); i++)
-        if(man.Property(i).IsClass())//если свойства класс
+    {
+        const TPropInfo& info = man.Property(i);
+        if (info.IsClass())//если свойства класс
         {
             TPtrPropertyClass ptr = VariableToPropClass(obj->ReadProperty(i));
-            if(ptr == nullptr) continue;
-            if(thisInfo->CheckType(ptr->Manager()))
+            if (ptr == nullptr) continue;
+            if (thisInfo->CheckType(ptr->Manager(), info.Name()))
                 children.emplace_back(ptr, this, i);
         }
-        else if(man.Property(i).IsArray())
+        else if (info.IsArray())
+        {
+            int count = obj->CountInArray(i);
+            for (int j = 0; j < count; j++)
             {
-                int count = obj->CountInArray(i);
-                for(int j = 0; j < count; j++)
-                {
-                    TPtrPropertyClass ptr = VariableToPropClass(obj->ReadFromArray(i, j));
-                    if(ptr == nullptr) continue;
-                    if(thisInfo->CheckType(ptr->Manager()))
-                        children.emplace_back(ptr, this, i);
-                }
+                TPtrPropertyClass ptr = VariableToPropClass(obj->ReadFromArray(i, j));
+                if (ptr == nullptr) continue;
+                if (thisInfo->CheckType(ptr->Manager(), info.Name()))
+                    children.emplace_back(ptr, this, i);
             }
+        }
+    }
     isLoaded = true;
 }
 
@@ -379,34 +384,43 @@ TCustClass* TObjTree::RootInfo() const
     return &Single<TCustClass>();
 }
 
-TCustClass *TObjTree::CustInfo(const TPropertyManager &man) const
-{
-    TCustClass* rootInfo = RootInfo();
-    TCustClass* thisInfo = rootInfo->Info(man);
-    if(thisInfo != nullptr)
-    {
-        if(thisInfo->ShowClasses() != TShowKind::Parent)
-            rootInfo = thisInfo;
-    }
-    return rootInfo;
-}
-
 TCustClass *TObjTree::ClassCustoms() const
 {
-    return CustInfo(obj->Manager());
+    return ClassCustoms(obj->Manager(), true);
 }
 
+TCustClass *TObjTree::ClassCustoms(const TPropertyManager &man, bool checkClass) const
+{
+    TCustClass* rootInfo = RootInfo();
+
+    TCustClass* parInfo = (parent) ? parent->ClassCustoms() : rootInfo;
+    if(IsProp()) return parInfo;
+    TCustClass* thisInfo = parInfo->Info(man);
+    if(thisInfo && (
+            thisInfo->ShowClasses()  != TShowClass::Parent && checkClass ||
+            thisInfo->ShowProperty() != TShowProp::Parent && checkClass == false
+            )
+      )
+        return thisInfo;
+    return parInfo;
+}
+
+TCustClass *TObjTree::PropCustoms() const
+{
+    return ClassCustoms(obj->Manager(), false);
+}
 
 
 
 //----------------------------------------------------------------------------------------------------------------------
 
-bool TCustClass::CheckType(const TPropertyManager& value)
+bool TCustClass::CheckType(const TPropertyManager& value, const TString& nameProp)
 {
     switch(showClasses)
     {
-        case TShowKind::All: return true;
-        case TShowKind::Select: return Info(value) != nullptr;
+        case TShowClass::All: return true;
+        case TShowClass::SelType: return Info(value) != nullptr;
+        case TShowClass::SelProp: return Info(value) != nullptr && props.find(nameProp) != props.end();
         default : return false;
     }
 }
@@ -415,24 +429,24 @@ bool TCustClass::CheckProp(TPropertyClass* obj, const TString& value)
 {
     switch(showProperty)
     {
-        case TShowKind::All:
+        case TShowProp::All:
             return true;
 
-        case TShowKind::Select:
+        case TShowProp::Select:
         {
             auto it = props.find(value);
             if (it != props.end())
                 return it->second.visible;
             return false;
         }
-        case TShowKind::SelTrue:
+        case TShowProp::SelTrue:
         {
             auto it = props.find(value);
             if (it != props.end())
                 return it->second.visible;
             return true;
         }
-        case TShowKind::Function:
+        case TShowProp::Function:
             if(checkPropFun)
                 return checkPropFun(obj, value);
             else
@@ -442,14 +456,20 @@ bool TCustClass::CheckProp(TPropertyClass* obj, const TString& value)
     }
 }
 
-TCustClass& TCustClass::AddType(const TString &typeName, TShowKind value)
+TCustClass& TCustClass::AddType(const TString &typeName, TShowProp sp, TShowClass sc)
+{
+    return AddType(typeName, TCustClass().SetShowProperty(sp).SetShowClasses(sc));
+}
+
+TCustClass &TCustClass::AddType(const TString &typeName, const TCustClass &value)
 {
     const auto& man = TPropertyManager::Manager(typeName);
     if(man.IsValid())
-        return types[&man] = TCustClass().SetShowProperty(value);
+        return types[&man] = value;
     else
         return *this;
 }
+
 
 TCustProp& TCustClass::AddProp(const TString &propName, bool visible)
 {
@@ -487,7 +507,12 @@ TCustClass &TCustClass::AddProps(const TString &props)
 
 TCustClass &TCustClass::AddTypeProp(const TString &typeName, const TString &props)
 {
-    return AddType(typeName, TShowKind::Select).AddProps(props);
+    return AddType(typeName).AddProps(props);
+}
+
+TCustClass *TCustClass::Info(const TString &propMan)
+{
+    return Info(TPropertyManager::Manager(propMan));
 }
 
 TCustClass* TCustClass::Info(const TPropertyManager &value)
@@ -515,6 +540,8 @@ TCustProp &TCustClass::CustProp(const TString &value)
     if(it != props.end()) return it->second;
     return Single<TCustProp>();
 }
+
+
 
 
 

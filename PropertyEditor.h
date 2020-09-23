@@ -62,6 +62,7 @@ public:
     using TVecObjTree = TPtrVector<TObjTree>;
 
     TCustClass* ClassCustoms() const;
+    TCustClass* PropCustoms() const;//получаем настройки для загружаемых property
 private:
     TObjTree* parent = nullptr;
     TCustClass* info = nullptr;
@@ -82,16 +83,26 @@ private:
     bool HasChild(const TPtrPropertyClass& value) const;
 
     TCustClass* RootInfo() const;
-    TCustClass* CustInfo(const TPropertyManager& man) const;
+    //TCustClass* CustInfo(const TPropertyManager& man, bool chkClasses) const;
+    TCustClass* ClassCustoms(const TPropertyManager &man, bool checkClass) const;
+    TCustClass* PropCustoms(const TPropertyManager &man) const;
 };
 
-enum class TShowKind{
+enum class TShowProp{
     All,        //отображать все значения
     None,       //не отображать ничего
     Select,     //отображать или нет указано в свойстве, если не найдено то не отображать
     SelTrue,    //по умолчанию true
     Parent,      //отображать в зависимости от родительского элемента
     Function    //отображать или нет решает функция
+};
+
+enum class TShowClass{
+    All,        //отображать все классы
+    None,       //не отображать ничего
+    SelType,    //отображать если есть в списке типов
+    SelProp,    //отображать есть в списке типов и в списке свойств
+    Parent      //отображать в зависимости от родительского элемента
 };
 
 using TCheckPropFun = std::function<bool(TPropertyClass*, const TString&)>;
@@ -112,33 +123,35 @@ struct TCustProp{
 };
 
 class TCustClass{
-    TShowKind showClasses = TShowKind::All;
-    TShowKind showProperty = TShowKind::All;
-    TShowKind editProperty = TShowKind::None;
+    TShowClass showClasses = TShowClass::All;
+    TShowProp showProperty = TShowProp::All;
+    TShowProp editProperty = TShowProp::None;
     std::map<const TPropertyManager*, TCustClass> types;
     std::map<TString, TCustProp> props;
     TString valueClassProperty = "name";
     TCheckPropFun checkPropFun;
 public:
 
-    inline TShowKind ShowClasses() const { return showClasses; }
-    inline TShowKind ShowProperty() const { return showProperty; }
-    inline TShowKind EditProperty() const { return editProperty; }
+    inline TShowClass ShowClasses() const { return showClasses; }
+    inline TShowProp ShowProperty() const { return showProperty; }
+    inline TShowProp EditProperty() const { return editProperty; }
     inline TString ValueClassProperty() const { return valueClassProperty; }
 
-    inline TCustClass& SetShowClasses(TShowKind value)  { showClasses = value;  return *this; }
-    inline TCustClass& SetShowProperty(TShowKind value) { showProperty = value; return *this; }
-    inline TCustClass& SetEditProperty(TShowKind value) { editProperty = value; return *this; }
+    inline TCustClass& SetShowClasses(TShowClass value)  { showClasses = value;  return *this; }
+    inline TCustClass& SetShowProperty(TShowProp value) { showProperty = value; return *this; }
+    inline TCustClass& SetEditProperty(TShowProp value) { editProperty = value; return *this; }
     inline TCustClass& SetValueClassProperty(const TString& value) { valueClassProperty = value; return *this; }
     inline TCustClass& SetCheckPropFun(const TCheckPropFun& value) { checkPropFun = value; return *this; }
 
-    TCustClass& AddType(const TString& typeName, TShowKind value);
+    TCustClass& AddType(const TString& typeName, TShowProp sp = TShowProp::Select, TShowClass sc = TShowClass::Parent);
+    TCustClass& AddType(const TString &typeName, const TCustClass& value);
     TCustProp& AddProp(const TString& propName, bool visible = true);
     TCustClass& AddProps(const TString& props);
     TCustClass& AddTypeProp(const TString& typeName, const TString& props);
 
-    TCustClass* Info(const TPropertyManager& value);
-    bool CheckType(const TPropertyManager& value);
+    TCustClass* Info(const TString& propMan);
+    TCustClass* Info(const TPropertyManager& propMan);
+    bool CheckType(const TPropertyManager& value, const TString& nameProp);
     bool CheckProp(TPropertyClass* obj, const TString& value);
 
     void Clear();
