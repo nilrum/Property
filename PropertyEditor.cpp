@@ -384,16 +384,16 @@ TCustClass* TObjTree::RootInfo() const
     return &Single<TCustClass>();
 }
 
-TCustClass *TObjTree::ClassCustoms() const
+TCustClass *TObjTree::ClassCustoms(bool checkClass) const
 {
-    return ClassCustoms(obj->Manager(), true);
+    return ClassCustoms(obj->Manager(), checkClass);
 }
 
 TCustClass *TObjTree::ClassCustoms(const TPropertyManager &man, bool checkClass) const
 {
     TCustClass* rootInfo = RootInfo();
 
-    TCustClass* parInfo = (parent) ? parent->ClassCustoms() : rootInfo;
+    TCustClass* parInfo = (parent) ? parent->ClassCustoms(IsProp() == false) : rootInfo;
     if(IsProp()) return parInfo;
     TCustClass* thisInfo = parInfo->Info(man);
     if(thisInfo && (

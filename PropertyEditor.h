@@ -61,7 +61,7 @@ public:
     void SetOnUpdateTree(TOnUpdateTree value);
     using TVecObjTree = TPtrVector<TObjTree>;
 
-    TCustClass* ClassCustoms() const;
+    TCustClass* ClassCustoms(bool checkClass = true) const;
     TCustClass* PropCustoms() const;//получаем настройки для загружаемых property
 private:
     TObjTree* parent = nullptr;
