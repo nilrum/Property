@@ -12,6 +12,7 @@
 #include <sigslot/signal.hpp>
 #include "Variable.h"
 #include "Types.h"
+#include <climits>
 
 /**
  * Класс хранит всю информацию о имеющихся property

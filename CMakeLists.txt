@@ -18,11 +18,14 @@ if(NOT EXISTS ${SIGSLOT_DIR})
     message("Added SIGSLOT_DIR = [${SIGSLOT_DIR}]")
 endif()
 
-set(PROPERTY_HDR Types.h Variable.h PropertyClass.h PropertyClass.hpp Serialization.h PropertyEditor.h EnumInfo.h GlobalCustom.h)
-set(PROPERTY_SRC Variable.cpp PropertyClass.cpp Serialization.cpp PropertyEditor.cpp ${PUGI_DIR}/src/pugixml.cpp EnumInfo.cpp GlobalCustom.cpp Types.cpp)
+set(PROPERTY_HDR
+        Types.h Variable.h PropertyClass.h PropertyClass.hpp
+        Serialization.h PropertyEditor.h EnumInfo.h GlobalCustom.h Progress.h)
+set(PROPERTY_SRC
+        Variable.cpp PropertyClass.cpp Serialization.cpp PropertyEditor.cpp
+        ${PUGI_DIR}/src/pugixml.cpp EnumInfo.cpp GlobalCustom.cpp Types.cpp Progress.cpp)
 
 if(NOT TARGET Property)
-    #add_definitions("-DMAGIC_ENUM_NO_CHECK_SUPPORT")
     add_library(Property ${PROPERTY_HDR} ${PROPERTY_SRC})
     target_include_directories(Property PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PRIVATE ${PUGI_DIR}/src PUBLIC ${SIGSLOT_DIR}/include)
 endif()

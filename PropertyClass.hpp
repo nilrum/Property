@@ -16,7 +16,7 @@ struct TIsClass{
     using TCheck = typename std::decay<T>::type;
     static const bool value = !(std::is_arithmetic<TCheck>::value || std::is_enum<TCheck>::value
             || std::is_same<TCheck, TString>::value || std::is_same<TCheck, char*>::value
-            || std::is_same<TCheck, TEnum>::value);
+            || std::is_same<TCheck, TEnum>::value || std::is_same<TCheck, TVariable>::value);
 };
 
 template<typename T, typename R>
@@ -29,8 +29,8 @@ std::enable_if_t<std::is_base_of<TPropertyClass, R>::value, TGetFun> GetFun(std:
     };
 }
 
-template<typename T, typename R>
-std::enable_if_t<std::is_base_of<TPropertyClass, R>::value, TGetFun> GetFun(std::shared_ptr<R> (T::*method)() const, int index)
+template<typename T, typename R, typename TInd>
+std::enable_if_t<std::is_base_of<TPropertyClass, R>::value, TGetFun> GetFun(std::shared_ptr<R> (T::*method)() const, TInd index)
 {
     return [method, index](const TPropertyClass *ptr) {
         const T *obj = dynamic_cast<const T *>(ptr);
@@ -49,8 +49,8 @@ TGetFun GetFun(R (T::*method)() const)
     };
 }
 //вариант для вызова с индексом по умолчанию
-template<typename T, typename R>
-TGetFun GetFun(R (T::*method)(int) const, int index)
+template<typename T, typename R, typename TInd>
+TGetFun GetFun(R (T::*method)(TInd) const, TInd index)
 {
     return [method, index](const TPropertyClass *ptr) {
         const T *obj = dynamic_cast<const T *>(ptr);
@@ -68,8 +68,8 @@ std::enable_if_t<std::is_base_of<TPropertyClass, P>::value, TSetFun> SetFun(R (T
     };
 }
 //вариант для вызова с индексом по умолчанию
-template<typename T, typename R, typename P>
-std::enable_if_t<std::is_base_of<TPropertyClass, P>::value, TSetFun> SetFun(R (T::*method)(int, const std::shared_ptr<P> &), int index)
+template<typename T, typename R, typename P, typename TInd>
+std::enable_if_t<std::is_base_of<TPropertyClass, P>::value, TSetFun> SetFun(R (T::*method)(TInd, const std::shared_ptr<P> &), TInd index)
 {
     return [method, index](TPropertyClass *ptr, const TVariable &value) {
         T *obj = dynamic_cast<T *>(ptr);
@@ -96,7 +96,7 @@ TSetFun SetFun(R (T::*method)(P))
 }
 //вариант для вызова с индексом по умолчанию
 template<typename T, typename R, typename P, typename TInd>
-TSetFun SetFun(R (T::*method)(int, P), TInd index)
+TSetFun SetFun(R (T::*method)(TInd, P), TInd index)
 {
     return [method, index](TPropertyClass *ptr, const TVariable &value) {
         T *obj = dynamic_cast<T *>(ptr);
@@ -144,7 +144,8 @@ TGetIndFun GetIndFun(R (T::*method)(TInd) const)
 #define INIT_PROPERTYSN(NAME, TYPE) namespace { const bool init##NAME = TYPE::InitProperties(); }
 #define INIT_PROPERTYS(TYPE) INIT_PROPERTYSN(TYPE, TYPE)
 
-#define APROPERTY(TYPE, NAME) ManagerStatic().AddProperty(#TYPE, #NAME, TIsClass<TYPE>::value)
+#define APROPERTY_NAME(TYPE, NAME) ManagerStatic().AddProperty(#TYPE, NAME, TIsClass<TYPE>::value)
+#define APROPERTY(TYPE, NAME) APROPERTY_NAME(TYPE, #NAME)
 #define PROPERTY_READ(TYPE, NAME, GET) APROPERTY(TYPE, NAME).Get(GetFun(&TYPENAME::GET))
 #define PROPERTY(TYPE, NAME, GET, SET) PROPERTY_READ(TYPE, NAME, GET).Set(SetFun(&TYPENAME::SET))
 #define PROPERTY_ARRAY_READ(TYPE, NAME, COUNT, GET) \
@@ -154,8 +155,11 @@ TGetIndFun GetIndFun(R (T::*method)(TInd) const)
 #define PROPERTY_ARRAY(TYPE, NAME, COUNT, GET, ADD, DEL) \
             PROPERTY_ARRAY_ADD(TYPE, NAME, COUNT, GET, ADD).DelArray(SetFun(&TYPENAME::DEL))
 
+#define PROPERTY_CALL_IMPL(GET, SET, INDEX)\
+     Get(GetFun(&TYPENAME::GET, size_t(INDEX))).Set(SetFun(&TYPENAME::SET, size_t(INDEX)))
+
 #define PROPERTY_CALL(TYPE, NAME, GET, SET, INDEX)\
-     APROPERTY(TYPE, NAME).Get(GetFun(&TYPENAME::GET, (int)INDEX)).Set(SetFun(&TYPENAME::SET, (int)INDEX))
+     APROPERTY(TYPE, NAME).PROPERTY_CALL_IMPL(GET, SET, INDEX)
 
 #define PROPERTY_FUN_IMPL(TYPE, NAME, GET, SET, OTHER)\
     public:\
@@ -175,7 +179,7 @@ TGetIndFun GetIndFun(R (T::*method)(TInd) const)
 #define PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\
     public:\
         size_t COUNT() const { return NAME.size(); }\
-        const TYPE& GET(int index) const { return NAME[index]; }
+        const TYPE& GET(size_t index) const { return NAME[index]; }
 
 #define PROPERTY_ARRAY_ADD_FUN_IMPL(TYPE, NAME, COUNT, GET, ADD, OTHER)\
         PROPERTY_ARRAY_READ_FUN(TYPE, NAME, COUNT, GET)\

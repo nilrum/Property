@@ -447,7 +447,17 @@ struct TConstExprMap{
     }
 };
 
+enum class TOpenFileMode{ Read, Write, Append };
+std::shared_ptr<FILE> OpenFile(const std::string& path, TOpenFileMode mode = TOpenFileMode::Read);
 
-std::shared_ptr<FILE> OpenFile(const std::string& path, bool isRead = true);
+class TSimpleLog{
+public:
+    void Clear();
+    void Log(const TString& text);
+
+    STATIC_ARG(TString, DefaultPath, "appLog.txt");
+};
+
+#define LOG(VALUE) TSimpleLog().Log(VALUE);
 
 #endif //TESTAPP_TYPES_H

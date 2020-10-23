@@ -4,16 +4,6 @@
 
 #ifndef NEO_ENUMINFO_H
 #define NEO_ENUMINFO_H
-/*
-#if defined(__clang__) || defined(__GNUC__) && __GNUC__ >= 9 || defined(_MSC_VER)
-#define IS_MAGIC_USED
-#include "magic_enum.hpp"
-
-#define ENUM_NAMES(NAME, ...)
-#define ENUM(NAME, ...) enum NAME { __VA_ARGS__};
-#define ENUM_CLASS(NAME, ...) enum class NAME { __VA_ARGS__};
-
-#else*/
 
 #include "Types.h"
 
