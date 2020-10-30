@@ -12,7 +12,7 @@ TEST(PropertyTest, VariableAndTPropertyClass)
     EXPECT_EQ(prop->Name(), TString("propertyClass"));
 
     TVariable var = PropertyClassToVariable(prop);
-    EXPECT_EQ(var.Type(), TVariableType::vtExt);
+    EXPECT_EQ(var.Type(), TVariableType::Ext);
 
     TPtrPropertyClass prop2 = VariableToPropClass(var);
     EXPECT_TRUE(prop2);
@@ -37,7 +37,7 @@ TEST(PropertyTest, VariableAndTPropertyInher)
     EXPECT_EQ(inher->Name(), TString("inherClass"));
 
     TVariable var = PropertyClassToVariable(inher);
-    EXPECT_EQ(var.Type(), TVariableType::vtExt);
+    EXPECT_EQ(var.Type(), TVariableType::Ext);
 
     TPtrPropertyClass prop = VariableToPropClass(var);
     EXPECT_TRUE(prop);

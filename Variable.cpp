@@ -6,13 +6,13 @@
 #include <stdexcept>
 #include <cstring>
 
-TVariable::TVariable() : varType(TVariableType::vtNone) {}
+TVariable::TVariable() : varType(TVariableType::None) {}
 
-TVariable::TVariable(const std::string &value) : varValue(value), varType(TVariableType::vtStr) {}
+TVariable::TVariable(const std::string &value) : varValue(value), varType(TVariableType::Str) {}
 
-TVariable::TVariable(const char *value) : varValue(std::string(value)), varType(TVariableType::vtStr) {}
+TVariable::TVariable(const char *value) : varValue(std::string(value)), varType(TVariableType::Str) {}
 
-TVariable::TVariable(TPtrVariableExt &&value) : varValue(value), varType(TVariableType::vtExt) {}
+TVariable::TVariable(TPtrVariableExt &&value) : varValue(value), varType(TVariableType::Ext) {}
 
 TVariable::TVariable(const TVariable &oth) : varType(oth.varType), varValue(oth.varValue){}
 
@@ -24,14 +24,14 @@ TVariable &TVariable::operator=(const TVariable &oth)
 
 TVariable::TVariable(TVariable &&oth) : varType(std::move(oth.varType)), varValue(std::move(oth.varValue))
 {
-    oth.varType = TVariableType::vtNone;
+    oth.varType = TVariableType::None;
 }
 
 TVariable &TVariable::operator=(TVariable &&oth)
 {
     varType = std::move(oth.varType);
     varValue = std::move(oth.varValue);
-    oth.varType = TVariableType::vtNone;
+    oth.varType = TVariableType::None;
     return *this;
 }
 
@@ -51,19 +51,19 @@ std::string TVariable::TypeName() const
 {
     switch (varType)
     {
-        case TVariableType::vtInt:
+        case TVariableType::Int:
             return "int";
-        case TVariableType ::vtUInt:
+        case TVariableType ::UInt:
             return "unsigned int";
-        case TVariableType::vtDouble:
+        case TVariableType::Double:
             return "double";
-        case TVariableType::vtStr:
+        case TVariableType::Str:
             return "string";
-        case TVariableType::vtEnum:
+        case TVariableType::Enum:
             return "enum";
-        case TVariableType::vtBool:
+        case TVariableType::Bool:
             return "bool";
-        case TVariableType::vtExt:
+        case TVariableType::Ext:
             return std::any_cast<TEnum>(varValue).TypeEnum();
         default:
             return std::string();
@@ -77,19 +77,19 @@ int64_t TVariable::ToInt() const
     {
         switch (varType)
         {
-            case TVariableType::vtNone :
+            case TVariableType::None :
                 return 0;
-            case TVariableType::vtInt:
+            case TVariableType::Int:
                 return std::any_cast<int64_t>(varValue);
-            case TVariableType::vtUInt:
+            case TVariableType::UInt:
                 return static_cast<int64_t >(std::any_cast<uint64_t>(varValue));
-            case TVariableType::vtDouble:
+            case TVariableType::Double:
                 return static_cast<int64_t >(std::any_cast<double>(varValue));
-            case TVariableType::vtStr:
+            case TVariableType::Str:
                 return std::stoll(std::any_cast<std::string>(varValue));
-            case TVariableType::vtEnum:
+            case TVariableType::Enum:
                 return std::any_cast<TEnum>(varValue).Index();
-            case TVariableType::vtBool:
+            case TVariableType::Bool:
                 return std::any_cast<bool>(varValue);
         }
     }
@@ -104,19 +104,19 @@ uint64_t TVariable::ToUInt() const
     {
         switch (varType)
         {
-            case TVariableType::vtNone :
+            case TVariableType::None :
                 return 0;
-            case TVariableType::vtInt:
+            case TVariableType::Int:
                 return std::any_cast<int64_t>(varValue);
-            case TVariableType::vtUInt:
+            case TVariableType::UInt:
                 return std::any_cast<uint64_t>(varValue);
-            case TVariableType::vtDouble:
+            case TVariableType::Double:
                 return static_cast<uint64_t >(std::any_cast<double>(varValue));
-            case TVariableType::vtStr:
+            case TVariableType::Str:
                 return std::stoull(std::any_cast<std::string>(varValue));
-            case TVariableType::vtEnum:
+            case TVariableType::Enum:
                 return std::any_cast<TEnum>(varValue).Index();
-            case TVariableType::vtBool:
+            case TVariableType::Bool:
                 return std::any_cast<bool>(varValue);
         }
     }
@@ -131,19 +131,19 @@ double TVariable::ToDouble() const
     {
         switch (varType)
         {
-            case TVariableType::vtNone :
+            case TVariableType::None :
                 return 0.;
-            case TVariableType::vtInt:
+            case TVariableType::Int:
                 return static_cast<double >(std::any_cast<int64_t>(varValue));
-            case TVariableType::vtUInt:
+            case TVariableType::UInt:
                 return static_cast<double >(std::any_cast<uint64_t>(varValue));
-            case TVariableType::vtDouble:
+            case TVariableType::Double:
                 return std::any_cast<double>(varValue);
-            case TVariableType::vtStr:
+            case TVariableType::Str:
                 return std::stod(std::any_cast<std::string>(varValue));
-            case TVariableType::vtEnum:
+            case TVariableType::Enum:
                 return double(std::any_cast<TEnum>(varValue).Index());
-            case TVariableType::vtBool:
+            case TVariableType::Bool:
                 return std::any_cast<bool>(varValue);
         }
     }
@@ -154,7 +154,7 @@ double TVariable::ToDouble() const
 
 bool TVariable::ToBool() const
 {
-    if(varType == TVariableType::vtStr)
+    if(varType == TVariableType::Str)
     {
         auto v = std::any_cast<std::string>(varValue);
         return v.empty() == false && v != "false" && v != "0";
@@ -167,19 +167,19 @@ std::string TVariable::ToString() const
 {
     switch (varType)
     {
-        case TVariableType::vtNone :
+        case TVariableType::None :
             return std::string();
-        case TVariableType::vtInt:
+        case TVariableType::Int:
             return std::to_string(std::any_cast<int64_t>(varValue));
-        case TVariableType::vtUInt:
+        case TVariableType::UInt:
             return std::to_string(std::any_cast<uint64_t>(varValue));
-        case TVariableType::vtDouble:
+        case TVariableType::Double:
             return std::to_string(std::any_cast<double>(varValue));
-        case TVariableType::vtStr:
+        case TVariableType::Str:
             return std::any_cast<std::string>(varValue);
-        case TVariableType::vtEnum:
+        case TVariableType::Enum:
             return std::any_cast<TEnum>(varValue).Name();
-        case TVariableType::vtBool:
+        case TVariableType::Bool:
             return ToBool() ? "true" : "false";
         default:
             return std::string();
@@ -190,37 +190,37 @@ TVariable TVariable::FromData(const TVariableType &type, void *data, const size_
 {
     switch (type)
     {
-        case TVariableType::vtEnum:
+        case TVariableType::Enum:
         {
             int32_t value = 0;
             memcpy(&value, data, sizeof(int32_t));
             return TVariable(value);
         }
-        case TVariableType::vtInt:
+        case TVariableType::Int:
         {
             int64_t value = 0;
             memcpy(&value, data, sizeof(int64_t));
             return TVariable(value);
         }
-        case TVariableType::vtUInt:
+        case TVariableType::UInt:
         {
             uint64_t value = 0;
             memcpy(&value, data, sizeof(uint64_t));
             return TVariable(value);
         }
-        case TVariableType::vtDouble:
+        case TVariableType::Double:
         {
             double value = 0;
             memcpy(&value, data, sizeof(double));
             return TVariable(value);
         }
-        case TVariableType::vtStr:
+        case TVariableType::Str:
         {
             std::string value((char*)data, count);
             return TVariable(value);
         }
 
-        case TVariableType::vtBool:
+        case TVariableType::Bool:
         {
             bool value = false;
             memcpy(&value, data, sizeof(bool));
@@ -235,14 +235,14 @@ size_t TVariable::Size() const
 {
     switch(varType)
     {
-        case TVariableType::vtNone: return 0;
-        case TVariableType::vtInt: return sizeof(int64_t);
-        case TVariableType::vtUInt: return sizeof(size_t);
-        case TVariableType::vtDouble: return sizeof(double);
-        case TVariableType::vtStr: return std::any_cast<std::string>(varValue).size();
-        case TVariableType::vtEnum: return sizeof(int32_t);
-        case TVariableType::vtExt: return std::any_cast<TPtrVariableExt>(varValue)->Size();
-        case TVariableType::vtBool: return sizeof(bool);
+        case TVariableType::None: return 0;
+        case TVariableType::Int: return sizeof(int64_t);
+        case TVariableType::UInt: return sizeof(size_t);
+        case TVariableType::Double: return sizeof(double);
+        case TVariableType::Str: return std::any_cast<std::string>(varValue).size();
+        case TVariableType::Enum: return sizeof(int32_t);
+        case TVariableType::Ext: return std::any_cast<TPtrVariableExt>(varValue)->Size();
+        case TVariableType::Bool: return sizeof(bool);
         default: return 0;
     }
 }
@@ -251,36 +251,36 @@ std::vector<uint8_t> TVariable::ToData() const
 {
     switch(varType)
     {
-        case TVariableType::vtNone: return std::vector<uint8_t>();
-        case TVariableType::vtInt:
+        case TVariableType::None: return std::vector<uint8_t>();
+        case TVariableType::Int:
         {
             int64_t value = ToInt();
             std::vector<uint8_t> res(sizeof(int64_t));
             memcpy(&res[0], &value, sizeof(int64_t));
             return res;
         }
-        case TVariableType::vtUInt:
+        case TVariableType::UInt:
         {
             uint64_t value = ToUInt();
             std::vector<uint8_t> res(sizeof(uint64_t));
             memcpy(&res[0], &value, sizeof(uint64_t));
             return res;
         }
-        case TVariableType::vtDouble:
+        case TVariableType::Double:
         {
             double value = ToDouble();
             std::vector<uint8_t> res(sizeof(double));
             memcpy(&res[0], &value, sizeof(double));
             return res;
         }
-        case TVariableType::vtEnum:
+        case TVariableType::Enum:
         {
             int32_t value = static_cast<int>(ToInt());
             std::vector<uint8_t> res(sizeof(int32_t));
             memcpy(&res[0], &value, sizeof(int32_t));
             return res;
         }
-        case TVariableType::vtStr:
+        case TVariableType::Str:
         {
             std::string value = ToString();
             std::vector<uint8_t> res(value.size());
@@ -288,14 +288,14 @@ std::vector<uint8_t> TVariable::ToData() const
             return res;
         }
 
-        case TVariableType::vtBool:
+        case TVariableType::Bool:
         {
             std::vector<uint8_t> res(sizeof(bool));
             res[0] = ToBool();
             return res;
         }
 
-        case TVariableType::vtExt: return std::vector<uint8_t>();
+        case TVariableType::Ext: return std::vector<uint8_t>();
 
         default: return std::vector<uint8_t>();
     }
@@ -308,7 +308,7 @@ std::any TVariable::GetAny() const
 
 TEnum TVariable::GetEnum() const
 {
-    if (varType == TVariableType::vtEnum)
+    if (varType == TVariableType::Enum)
         return std::any_cast<TEnum>(varValue);
     return TEnum();
 }

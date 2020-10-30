@@ -91,7 +91,7 @@ void TSerializationXml::Save(const TPropertyClass *obj, pugi::xml_node &node, co
     } else
     {
         TVariable v = prop.CallGet(obj);
-        if (v.Type() == TVariableType::vtExt)
+        if (v.Type() == TVariableType::Ext)
         {
             TPtrPropertyClass ptr = VariableToPropClass(v);
             if (ptr) Save(ptr.get(), node, prop.Name());
@@ -232,7 +232,7 @@ public:
     virtual bool LoadPropFromFile(const TString& path, TPropertyClass& value, const TPropInfo& prop) const override { return false; }
 
 protected:
-    enum TKindBin : uint8_t {kbClass = static_cast<uint8_t>(TVariableType::vtExt) + 1, kbList};
+    enum TKindBin : uint8_t {kbClass = static_cast<uint8_t>(TVariableType::Ext) + 1, kbList};
 
     struct TNode{
         TString name;
@@ -340,7 +340,7 @@ void TSerializationBin::Save(const TPropertyClass *obj, FILE* file, const TStrin
         else
         {
             TVariable v = prop.CallGet(obj);
-            if (v.Type() == TVariableType::vtExt)
+            if (v.Type() == TVariableType::Ext)
             {
                 TPtrPropertyClass ptr = VariableToPropClass(v);
                 if (ptr)

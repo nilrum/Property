@@ -153,7 +153,7 @@ private:
         const bool r##CODE = TResult::Register(typeid(TYPE), static_cast<int>(TYPE::CODE), TEXT);\
     }
 #define REGISTER_CODES(TYPE, ...)       \
-    namespace{                          \
+    namespace Namespace##TYPE{          \
         using TResType = TYPE;          \
         bool Fun##TYPE()                \
         {                               \

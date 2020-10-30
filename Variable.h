@@ -15,7 +15,7 @@
 
 enum class TVariableType
 {
-    vtNone, vtInt, vtUInt, vtDouble, vtStr, vtEnum, vtBool, vtExt
+    None, Int, UInt, Double, Str, Enum, Bool, Ext
 };
 
 class TVariableExt{
@@ -68,36 +68,36 @@ public:
                     if constexpr (std::is_signed<T>::value)
                     {
                         varValue = static_cast<int64_t >(value);
-                        varType = TVariableType::vtInt;
+                        varType = TVariableType::Int;
                     }
                     else
                     {
                         if constexpr(std::is_same_v<T, bool>)
                         {
                             varValue = value;
-                            varType = TVariableType::vtBool;
+                            varType = TVariableType::Bool;
                         }
                         else
                         {
                             varValue = static_cast<uint64_t>(value);
-                            varType = TVariableType::vtUInt;
+                            varType = TVariableType::UInt;
                         }
                     }
                 }
                 else
                 {
                     varValue = static_cast<double>(value);
-                    varType = TVariableType::vtDouble;
+                    varType = TVariableType::Double;
                 }
             }
             else
             {
                 varValue = TEnum(value);
-                varType = TVariableType::vtEnum;
+                varType = TVariableType::Enum;
             }
         }
 
-    TVariable(const TEnum& value): varValue(value), varType(TVariableType::vtEnum){};
+    TVariable(const TEnum& value): varValue(value), varType(TVariableType::Enum){};
     TVariable(const TVariable &oth);
     TVariable(TVariable &&oth);
 
@@ -129,7 +129,7 @@ public:
     operator double() const { return ToDouble(); }
     operator bool() const { return ToBool(); }
     operator std::string() const { return ToString(); }
-    operator TEnum() const { if(varType == TVariableType::vtEnum) return GetEnum(); return TEnum(int(ToInt())); }
+    operator TEnum() const { if(varType == TVariableType::Enum) return GetEnum(); return TEnum(int(ToInt())); }
 
     static TVariable FromData(const TVariableType& type, void* data, const size_t& count);
     template<typename T>
@@ -142,7 +142,7 @@ public:
 template <typename T>
 T TVariable::ToEnum() const
 {
-    if(varType == TVariableType::vtStr)
+    if(varType == TVariableType::Str)
     {
         const TEnumInfo& en = TEnumInfo::EnumInfo(typeid(T));
         int index = en.IndexFromName(ToString());
@@ -155,7 +155,7 @@ T TVariable::ToEnum() const
 template<typename T>
 T TVariable::ToType() const//вариант приведения когда мы точно знаем что там лежит
 {
-    if (varType == TVariableType::vtExt)
+    if (varType == TVariableType::Ext)
     {
         TPtrVariableExtValue<T> rez = std::dynamic_pointer_cast<TVariableExtValue<T>>(std::any_cast<TPtrVariableExt>(varValue));
         if (rez) return rez->Get();

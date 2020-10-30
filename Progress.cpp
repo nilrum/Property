@@ -7,24 +7,26 @@
 
 void TProgress::Progress(double value)
 {
-    switch (typeProg)
     {
-        case tpAbsolut:
-            cur = value;
-            break;
+        TLock guard(mut);
+        switch (typeProg)
+        {
+            case tpAbsolut:
+                cur = value;
+                break;
 
-        case tpStep:
-            cur = cur + value;
-            break;
+            case tpStep:
+                cur = cur + value;
+                break;
+        }
+        if (value != 0. && borderProg != 0.)
+        {
+            if (TDoubleCheck::Less(cur, curBorder))
+                return;         //если бордюр не преодолели то окно прогресса не вызываем
+            curBorder = curBorder + borderProg; //если бордюр преодолен, то отобразим окно
+        }
     }
-    if(value != 0. && borderProg != 0.)
-    {
-        if (TDoubleCheck::Less(cur, curBorder)) return;         //если бордюр не преодолели то окно прогресса не вызываем
-        curBorder = curBorder + borderProg; //если бордюр преодолен, то отобразим окно
-    }
-
     ViewShow();
-    if(cur >= maxProg) Cancel();
 }
 
 void TProgress::Finish()
@@ -104,3 +106,67 @@ TProgress &TProgress::SetMaxAndBorderCoef(double value, double coef)
     SetBorderOfMax(coef);
     return *this;
 }
+
+void TProgress::SetError(TResult value)
+{
+    TLock lock(mut);
+    error = value;
+}
+
+//-----------------------------------------------------------------------------------------------------------
+TPoolFunction* TPoolFunction::Create(TPtrProgress progress)
+{
+    TPoolFunction* res = new TPoolFunction();//создаем пулл функций
+    res->ptr.reset(res);//отдаем ему на хранение
+    res->progress = progress;
+    return res;
+}
+
+void TPoolFunction::Start()
+{
+    results = 0;
+
+    if(functions.empty())
+    {
+        ptr.reset();//освобождаем
+        return;
+    }
+
+    if(progress)
+    {
+        progress->SetIsSend(true);
+        progress->SetTypeProgress(TProgress::tpStep);
+        progress->SetMax(functions.size());
+    }
+    for(const auto& fun : functions)
+    {
+        std::thread t(
+                [this, fun]() {
+
+                    TResult res = fun();
+                    if(res.IsError())//если была ошибка выполнения
+                    {
+                        TLock lock(mut);
+                        if(error.IsNoError())//сохраняем только первую ошибку из списка
+                        {
+                            error = res;
+                            if (progress) progress->SetError(error);
+                        }
+                    }
+                    results++;
+                    if (progress) progress->Progress(1.);
+                    if (results == functions.size())
+                    {
+                        OnFinish(error);
+                        ptr.reset();
+                    }
+                });
+        t.detach();
+    }
+}
+
+void TPoolFunction::Add(TPoolFunction::TCallFunction value)
+{
+    functions.push_back(value);
+}
+
