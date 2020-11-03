@@ -50,7 +50,7 @@ TPropertyEditor &TPropertyEditor::SetIsEdit(bool value)
 
 bool TPropertyEditor::IsEdit() const
 {
-    return classCustoms.EditProperty() == TShowProp::All;
+    return true;
 }
 
 void TPropertyEditor::SetObject(TPtrPropertyClass value)
@@ -76,13 +76,18 @@ void TPropertyEditor::Clear()
     classCustoms.Clear();
 }
 
-TPtrPropertyClass TPropertyEditor::Obj() const
+TWPtrPropertyClass TPropertyEditor::Obj() const
 {
     return tree.Obj();
 }
 
+TPtrPropertyClass TPropertyEditor::LockObj() const
+{
+    return tree.LockObj();
+}
+
 //-------------------------------------TObjTree-------------------------------------------------------------------------
-TObjTree::TObjTree(const TPtrPropertyClass &value, TObjTree* p, int ind):parent(p), indProp(ind)
+TObjTree::TObjTree(const TPtrPropertyClass &value, const TPtrObjTree& par, int ind):parent(par), indProp(ind)
 {
     SetObj(value);
 }
@@ -114,14 +119,14 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
                 props.emplace_back(obj, this, i);
 }
 
-const TPtrPropertyClass &TObjTree::Obj() const
+const TWPtrPropertyClass &TObjTree::Obj() const
 {
     return obj;
 }
 
-int TObjTree::IndProp() const
+TPtrPropertyClass TObjTree::LockObj() const
 {
-    return indProp;
+    return obj.lock();
 }
 
 bool TObjTree::HasChild(const TPtrPropertyClass &value) const
@@ -159,7 +164,7 @@ size_t TObjTree::CountProps() const
     return props.size();
 }
 
-TObjTree &TObjTree::Prop(int index)
+TObjTree &TObjTree::Prop(size_t index)
 {
     return props[index];
 }
@@ -169,12 +174,12 @@ size_t TObjTree::CountChildren() const
     return children.size();
 }
 
-TObjTree &TObjTree::Child(int index)
+TObjTree &TObjTree::Child(size_t index)
 {
     return children[index];
 }
 
-const TObjTree &TObjTree::Child(int index) const
+const TObjTree &TObjTree::Child(size_t index) const
 {
     return children[index];
 }

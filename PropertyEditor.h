@@ -12,17 +12,42 @@ class TObjTree;
 class TCustClass;
 using TOnUpdateTree = std::function<void(TObjTree* value)>;
 
+using TPtrObjTree = std::shared_ptr<TObjTree>;
+using TWPtrObjTree = std::weak_ptr<TObjTree>;
+
 class TObjTree{
 public:
-    TObjTree(const TPtrPropertyClass& value = TPtrPropertyClass(), TObjTree* parent = nullptr, int indProp = -1);
+    TObjTree(const TPtrPropertyClass& value = TPtrPropertyClass(), const TPtrObjTree& par = TPtrObjTree(),
+             int indProp = -1);
+
+    inline int IndProp() const { return indProp; };
+    const TWPtrPropertyClass& Obj() const;
+    TPtrPropertyClass LockObj() const;
+
+    void SetObj(const TPtrPropertyClass& value);
+
+    size_t CountProps() const;
+    TObjTree& Prop(size_t index);
+
+    size_t CountChildren() const;
+    TObjTree& Child(size_t index);
+    const TObjTree& Child(size_t index) const;
+    void AddChild(TPtrPropertyClass value, int indProp);
+    void DelChild(TObjTree* value);
+    void DelChild(TPtrPropertyClass value, int indProp);
+
     void Clear();//очищаем полностью объект
     void ClearChildren();//очищаем объекты владения
     void SetCustomClass(TCustClass* value);
-    void SetObj(const TPtrPropertyClass& value);
-    const TPtrPropertyClass& Obj() const;
-    int IndProp() const;
 
     void Load(bool refind = false);
+
+    int LoadedCount();
+    int LoadedCountAll();
+
+    TString Name() const;
+    TVariable Value(bool isType = true) const;
+    void SetValue(const TVariable& value);
 
     bool IsLoaded() const;
     bool IsChildren() const;//отображает может ли быть объекты в children
@@ -32,29 +57,8 @@ public:
     bool IsBool() const;
     bool IsEditable() const;
 
-    size_t CountProps() const;
-    TObjTree& Prop(int index);
-
-    size_t CountChildren() const;
-    TObjTree& Child(int index);
-    const TObjTree& Child(int index) const;
-    void AddChild(TPtrPropertyClass value, int indProp);
-    void DelChild(TObjTree* value);
-    void DelChild(TPtrPropertyClass value, int indProp);
-
-    int LoadedCount();
-    int LoadedCountAll();
-
-    TString Name() const;
-    TVariable Value(bool isType = true) const;
-    void SetValue(const TVariable& value);
-
     TObjTree* Parent();             //родительский TObjTree
     int Num(int def = -1) const;    //номер по порядку в Child списке родителя
-
-    using TArrayInfo = std::tuple<TString, int>;
-    using TVectArrayInfo = std::vector<TArrayInfo>;
-    TVectArrayInfo ArrayInfo() const;//возвращает список свойств массивов и их номера
 
     bool IsChecked() const;
     void SetIsChecked(bool value);
@@ -63,11 +67,15 @@ public:
 
     TCustClass* ClassCustoms(bool checkClass = true) const;
     TCustClass* PropCustoms() const;//получаем настройки для загружаемых property
+
+    using TArrayInfo = std::tuple<TString, int>;
+    using TVectArrayInfo = std::vector<TArrayInfo>;
+    TVectArrayInfo ArrayInfo() const;//возвращает список свойств массивов и их номера
 private:
-    TObjTree* parent = nullptr;
+    TWPtrObjTree parent;
     TCustClass* info = nullptr;
     TOnUpdateTree update;
-    TPtrPropertyClass obj;
+    TWPtrPropertyClass obj;
     TIdConnect idChange;
     int indProp = -1;
 
@@ -137,6 +145,10 @@ public:
     inline TShowProp EditProperty() const { return editProperty; }
     inline TString ValueClassProperty() const { return valueClassProperty; }
 
+    inline size_t CountTypes() const { return types.size(); }
+    inline size_t CountProps() const { return props.size(); }
+    TCheckPropFun CheckPropFun() const { return checkPropFun; }
+
     inline TCustClass& SetShowClasses(TShowClass value)  { showClasses = value;  return *this; }
     inline TCustClass& SetShowProperty(TShowProp value) { showProperty = value; return *this; }
     inline TCustClass& SetEditProperty(TShowProp value) { editProperty = value; return *this; }
@@ -162,9 +174,11 @@ class TPropertyEditor{
 public:
     TPropertyEditor();
     void Clear();
-    virtual void SetObject(TPtrPropertyClass value);
+    virtual void SetObject(const TPtrPropertyClass& value);
 
-    TPtrPropertyClass Obj() const;
+    TWPtrPropertyClass Obj() const;
+    TPtrPropertyClass LockObj() const;
+
     TObjTree& Tree();
     TCustClass& ClassCustoms();
 
@@ -181,7 +195,6 @@ public:
     bool IsEdit() const;
 
 protected:
-    TPtrPropertyClass obj;
     TCustClass classCustoms;
     TObjTree tree;
 };

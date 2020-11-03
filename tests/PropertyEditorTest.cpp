@@ -11,6 +11,36 @@ TEST(TestPropertyEditor, TestInit)
     EXPECT_EQ(edit.IsAll(), true);
     EXPECT_EQ(edit.IsAllType(), true);
     EXPECT_EQ(edit.IsAllProperty(), true);
+    EXPECT_EQ(edit.IsEdit(), true);
+    EXPECT_TRUE(edit.Obj().expired());
+    EXPECT_EQ(edit.LockObj(), TPtrPropertyClass());
+
+    TCustClass& cust = edit.ClassCustoms();
+    EXPECT_EQ(cust.ShowClasses(), TShowClass::All);
+    EXPECT_EQ(cust.ShowProperty(), TShowProp::All);
+    EXPECT_EQ(cust.ValueClassProperty(), TString("name"));
+    EXPECT_EQ(cust.CountTypes(), 0);
+    EXPECT_EQ(cust.CountProps(), 0);
+    EXPECT_FALSE(cust.CheckPropFun());
+
+    TObjTree& tree = edit.Tree();
+
+    EXPECT_EQ(tree.IndProp(), -1);
+    EXPECT_EQ(tree.Obj(), TPtrPropertyClass());
+    EXPECT_EQ(tree.CountProps(), 0);
+    EXPECT_EQ(tree.CountChildren(), 0);
+    EXPECT_EQ(tree.Name(), TString());
+    EXPECT_EQ(tree.Value(false).ToString(), TString());
+    EXPECT_EQ(tree.IsLoaded(), false);
+    EXPECT_EQ(tree.IsChildren(), false);
+    EXPECT_EQ(tree.IsProp(), false);
+    EXPECT_EQ(tree.IsCheckable(), false);
+    EXPECT_EQ(tree.IsColor(), false);
+    EXPECT_EQ(tree.IsBool(), false);
+    EXPECT_EQ(tree.IsEditable(), false);
+    EXPECT_EQ(tree.IsChecked(), false);
+    EXPECT_EQ(tree.Parent(), nullptr);//TODO
+
 }
 
 TEST(TestPropertyEditor, TestSetObjectSimple)
