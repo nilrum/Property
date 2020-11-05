@@ -5,7 +5,7 @@
 #include "PropertyEditor.h"
 TPropertyEditor::TPropertyEditor()
 {
-    tree.SetCustomClass(&classCustoms);
+    tree->SetCustomClass(&classCustoms);
 }
 
 TPropertyEditor &TPropertyEditor::SetIsAll(bool value)
@@ -53,16 +53,14 @@ bool TPropertyEditor::IsEdit() const
     return true;
 }
 
-void TPropertyEditor::SetObject(TPtrPropertyClass value)
+void TPropertyEditor::SetObject(const TPtrPropertyClass& value)
 {
-    tree.Clear();
-    if(value)
-        tree.SetObj(std::move(value));
+    tree->SetObj(value);
 }
 
 TObjTree &TPropertyEditor::Tree()
 {
-    return tree;
+    return *tree;
 }
 
 TCustClass &TPropertyEditor::ClassCustoms()
@@ -72,24 +70,23 @@ TCustClass &TPropertyEditor::ClassCustoms()
 
 void TPropertyEditor::Clear()
 {
-    tree.Clear();
+    tree->Clear();
     classCustoms.Clear();
 }
 
 TWPtrPropertyClass TPropertyEditor::Obj() const
 {
-    return tree.Obj();
+    return tree->Obj();
 }
 
 TPtrPropertyClass TPropertyEditor::LockObj() const
 {
-    return tree.LockObj();
+    return tree->LockObj();
 }
 
 //-------------------------------------TObjTree-------------------------------------------------------------------------
-TObjTree::TObjTree(const TPtrPropertyClass &value, const TPtrObjTree& par, int ind):parent(par), indProp(ind)
+TObjTree::TObjTree(const TPtrObjTree& par, int ind):parent(par), indProp(ind)
 {
-    SetObj(value);
 }
 
 void TObjTree::Clear()
@@ -108,25 +105,18 @@ void TObjTree::ClearChildren()
 
 void TObjTree::SetObj(const TPtrPropertyClass& value)
 {
+    Clear();
+    if(value == nullptr) return;
+
     obj = value;
-    if(obj == nullptr || IsProp()) return;
-    idChange = obj->OnChanged.connect(&TObjTree::CallUpdate, this);
+    if(IsProp()) return;
+    idChange = value->OnChanged.connect(&TObjTree::CallUpdate, this);
     const TPropertyManager& man = value->Manager();
-    TCustClass* thisInfo = PropCustoms();//CustInfo(man, false);
+    TCustClass* thisInfo = PropCustoms();
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив
-            if(thisInfo->CheckProp(obj.get(), man.Property(i).Name()))
-                props.emplace_back(obj, this, i);
-}
-
-const TWPtrPropertyClass &TObjTree::Obj() const
-{
-    return obj;
-}
-
-TPtrPropertyClass TObjTree::LockObj() const
-{
-    return obj.lock();
+            if(thisInfo->CheckProp(value.get(), man.Property(i).Name()))
+                props.emplace_back(new TObjTree(shared_from_this(), i))->SetObj(value);
 }
 
 bool TObjTree::HasChild(const TPtrPropertyClass &value) const
@@ -161,12 +151,13 @@ bool TObjTree::HasChild(const TPtrPropertyClass &value) const
 
 size_t TObjTree::CountProps() const
 {
+    if(obj.expired()) return 0;
     return props.size();
 }
 
 TObjTree &TObjTree::Prop(size_t index)
 {
-    return props[index];
+    return *props[index];
 }
 
 size_t TObjTree::CountChildren() const
@@ -176,59 +167,75 @@ size_t TObjTree::CountChildren() const
 
 TObjTree &TObjTree::Child(size_t index)
 {
-    return children[index];
+    return *children[index];
 }
 
 const TObjTree &TObjTree::Child(size_t index) const
 {
-    return children[index];
+    return *children[index];
 }
 
 void TObjTree::AddChild(TPtrPropertyClass value, int indProp)
 {
-    obj->AddToArray(indProp, PropertyClassToVariable(value));
+    auto lock = LockObj();
+    if(lock)
+        lock->AddToArray(indProp, PropertyClassToVariable(value));
 }
 
 void TObjTree::DelChild(TPtrPropertyClass value, int indProp)
 {
-    obj->DelFromArray(indProp, PropertyClassToVariable(value));
-}
-
-void TObjTree::DelChild(TObjTree* value)
-{
-    DelChild(value->Obj(), value->IndProp());
+    auto lock = LockObj();
+    if(lock)
+        lock->DelFromArray(indProp, PropertyClassToVariable(value));
 }
 
 void TObjTree::Load(bool refind)
 {
     if(isLoaded && refind == false) return;
     ClearChildren();
-    if(obj == nullptr) return;
-    const TPropertyManager& man = obj->Manager();
+    if(obj.expired()) return;
+    auto lock = obj.lock();
+
+    const TPropertyManager& man = lock->Manager();
     TCustClass* thisInfo = ClassCustoms(man, true);
     for(size_t i = 0; i < man.CountProperty(); i++)
     {
         const TPropInfo& info = man.Property(i);
         if (info.IsClass())//если свойства класс
         {
-            TPtrPropertyClass ptr = VariableToPropClass(obj->ReadProperty(i));
+            TPtrPropertyClass ptr = VariableToPropClass(lock->ReadProperty(i));
             if (ptr == nullptr) continue;
             if (thisInfo->CheckType(ptr->Manager(), info.Name()))
-                children.emplace_back(ptr, this, i);
+                children.emplace_back(new TObjTree(shared_from_this(), i))->SetObj(ptr);
         }
         else if (info.IsArray())
         {
-            int count = obj->CountInArray(i);
+            int count = lock->CountInArray(i);
             for (int j = 0; j < count; j++)
             {
-                TPtrPropertyClass ptr = VariableToPropClass(obj->ReadFromArray(i, j));
+                TPtrPropertyClass ptr = VariableToPropClass(lock->ReadFromArray(i, j));
                 if (ptr == nullptr) continue;
                 if (thisInfo->CheckType(ptr->Manager(), info.Name()))
-                    children.emplace_back(ptr, this, i);
+                    children.emplace_back(new TObjTree(shared_from_this(), i))->SetObj(ptr);
             }
         }
     }
     isLoaded = true;
+}
+
+bool TObjTree::IsProp() const
+{
+    TPtrPropertyClass lock;
+    return IsProp(lock);
+}
+
+bool TObjTree::IsProp(TPtrPropertyClass &lock) const
+{
+    lock = LockObj();
+    if(indProp == -1 || lock == nullptr || parent.expired()) return false;
+    auto parObj = LockParent()->LockObj();
+    if(parObj == nullptr) return false;
+    return parObj->Manager().Property(indProp).IsPod();
 }
 
 bool TObjTree::IsLoaded() const
@@ -238,41 +245,38 @@ bool TObjTree::IsLoaded() const
 
 bool TObjTree::IsChildren() const
 {
-    if(indProp != -1 && parent->Obj()->Manager().Property(indProp).IsPod()) return false;
-    return HasChild(obj);
+    TPtrPropertyClass lock;
+    if(IsProp(lock)) return false;
+    return HasChild(lock);
 }
 
-bool TObjTree::IsProp() const
-{
-    return indProp != -1 && parent && parent->Obj()->Manager().Property(indProp).IsPod();
-}
 
 bool TObjTree::IsColor() const
 {
-    return IsProp() && parent->Obj()->Manager().Property(indProp).Type() == "TColor";
+    TPtrPropertyClass lock;//для IsProp == true неважно какой obj брать
+    return IsProp(lock) && lock->Manager().Property(indProp).Type() == "TColor";
 }
 
 bool TObjTree::IsBool() const
 {
-    return IsProp() && parent->Obj()->Manager().Property(indProp).Type() == "bool";
+    TPtrPropertyClass lock;
+    return IsProp(lock) && lock->Manager().Property(indProp).Type() == "bool";
 }
 
 bool TObjTree::IsEditable() const
 {
-    return IsProp() && parent->Obj()->Manager().Property(indProp).IsReadOnly() == false;
-}
-
-
-TObjTree *TObjTree::Parent()
-{
-    return parent;
+    TPtrPropertyClass lock;
+    return IsProp(lock) && lock->Manager().Property(indProp).IsReadOnly() == false;
 }
 
 int TObjTree::Num(int def) const
 {
-    if(parent)
-        for(size_t i = 0; i < parent->CountChildren(); i++)
-            if(&parent->Child(i) == this) return i;
+    if(parent.expired() == false)
+    {
+        auto lock = LockParent();
+        for (size_t i = 0; i < lock->CountChildren(); i++)
+            if (&lock->Child(i) == this) return i;
+    }
     return def;
 }
 
@@ -284,75 +288,80 @@ int TObjTree::LoadedCount()
 
 TString TObjTree::Name() const
 {
+    if(obj.expired()) return TString();
+    auto lock = LockObj();
     if(indProp == -1)
     {
-        if(obj->Name().empty()) return "Name";
-        else return obj->Name();
+        if(lock->Name().empty()) return "Name";
+        else return lock->Name();
     }
     else
     {
-        const TPropInfo & info = parent->Obj()->Manager().Property(indProp);
-        TString rez = info.Name();
-        if(info.IsArray() && obj->Name().empty() == false)//для элементов массива возвращаем его имя если есть
-            rez = obj->Name();
-        return rez;
+        if(parent.expired()) return TString();
+        auto lockPar = LockParent();
+        const TPropInfo & info = lockPar->LockObj()->Manager().Property(indProp);//предполагается что ребенок не может быть без родителя
+
+        if(info.IsArray() && lock->Name().empty() == false)//для элементов массива возвращаем его имя если есть
+            return lock->Name();
+        return info.Name();
     }
 }
 
 TVariable TObjTree::Value(bool isType) const
 {
-    if(IsProp())
-        return obj->ReadProperty(indProp);
+    TPtrPropertyClass lock;
+    if(IsProp(lock))
+        return lock->ReadProperty(indProp);
     else
     {
+        if(lock == nullptr) return TVariable();
         if(isType)
-            return (obj->TypeClass() + "::" + obj->Name()).c_str();
+            return (lock->TypeClass() + "::" + lock->Name()).c_str();
         else
-            return obj->ReadProperty(RootInfo()->ValueClassProperty());
+            return lock->ReadProperty(RootInfo()->ValueClassProperty());
     }
 }
 
 void TObjTree::SetValue(const TVariable &value)
 {
-    if(IsProp())
-        obj->WriteProperty(indProp, value);
+    TPtrPropertyClass lock;
+    if(IsProp(lock))
+        lock->WriteProperty(indProp, value);
 }
 
 TObjTree::TVectArrayInfo TObjTree::ArrayInfo() const
 {
-    TVectArrayInfo rez;
-    const TPropertyManager& man = obj->Manager();
+    TVectArrayInfo res;
+    if(obj.expired()) return res;
+    const TPropertyManager& man = LockObj()->Manager();
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsArray())
-            rez.emplace_back(man.Property(i).Name(), i);
-    return rez;
+            res.emplace_back(man.Property(i).Name(), i);
+    return res;
 }
 
 bool TObjTree::IsCheckable() const
 {
-    return IsProp() == false && obj->IndexProperty("isUsed") != -1;
+    TPtrPropertyClass lock;
+    return IsProp(lock) == false && lock && lock->IndexProperty("isUsed") != -1;
 }
 
 bool TObjTree::IsChecked() const
 {
-    int index = obj->IndexProperty("isUsed");
+    TPtrPropertyClass lock = LockObj();
+    if(lock == nullptr) return false;
+    int index = lock->IndexProperty("isUsed");
     if(index == -1) return false;
-    return obj->ReadProperty(index).ToBool();
+    return lock->ReadProperty(index).ToBool();
 }
 
 void TObjTree::SetIsChecked(bool value)
 {
-    int index = obj->IndexProperty("isUsed");
+    TPtrPropertyClass lock = LockObj();
+    if(lock == nullptr) return;
+    int index = lock->IndexProperty("isUsed");
     if(index == -1) return;
-    obj->WriteProperty(index, value);
-}
-
-TChangeThePropertyClass TObjTree::FindFunChecked() const
-{
-    if(funChecked) return funChecked;
-    else if(parent) return parent->FindFunChecked();
-
-    return TChangeThePropertyClass();
+    lock->WriteProperty(index, value);
 }
 
 int TObjTree::LoadedCountAll()
@@ -367,14 +376,16 @@ void TObjTree::SetOnUpdateTree(TOnUpdateTree value)
 
 void TObjTree::CallUpdate()
 {
+    if(isLoaded) Load(true);
     TOnUpdateTree call = GetFunUpdate();
     if(call) call(this);
 }
 
 TOnUpdateTree TObjTree::GetFunUpdate()
 {
-    if(parent != nullptr) return parent->GetFunUpdate();
-    return update;
+    if(parent.expired())
+        return update;
+    return LockParent()->GetFunUpdate();
 }
 
 void TObjTree::SetCustomClass(TCustClass *value)
@@ -384,21 +395,22 @@ void TObjTree::SetCustomClass(TCustClass *value)
 
 TCustClass* TObjTree::RootInfo() const
 {
-    if(parent) return parent->RootInfo();
+    if(parent.expired() == false) return LockParent()->RootInfo();
     if(info) return info;
     return &Single<TCustClass>();
 }
 
 TCustClass *TObjTree::ClassCustoms(bool checkClass) const
 {
-    return ClassCustoms(obj->Manager(), checkClass);
+    if(obj.expired()) return RootInfo();
+    return ClassCustoms(LockObj()->Manager(), checkClass);
 }
 
 TCustClass *TObjTree::ClassCustoms(const TPropertyManager &man, bool checkClass) const
 {
     TCustClass* rootInfo = RootInfo();
 
-    TCustClass* parInfo = (parent) ? parent->ClassCustoms(IsProp() == false) : rootInfo;
+    TCustClass* parInfo = (parent.expired()) ? rootInfo : LockParent()->ClassCustoms(IsProp() == false) ;
     if(IsProp()) return parInfo;
     TCustClass* thisInfo = parInfo->Info(man);
     if(thisInfo && (
@@ -412,8 +424,9 @@ TCustClass *TObjTree::ClassCustoms(const TPropertyManager &man, bool checkClass)
 
 TCustClass *TObjTree::PropCustoms() const
 {
-    return ClassCustoms(obj->Manager(), false);
+    return ClassCustoms(false);
 }
+
 
 
 

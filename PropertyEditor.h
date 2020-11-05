@@ -15,14 +15,15 @@ using TOnUpdateTree = std::function<void(TObjTree* value)>;
 using TPtrObjTree = std::shared_ptr<TObjTree>;
 using TWPtrObjTree = std::weak_ptr<TObjTree>;
 
-class TObjTree{
+class TObjTree : public std::enable_shared_from_this<TObjTree>{
 public:
-    TObjTree(const TPtrPropertyClass& value = TPtrPropertyClass(), const TPtrObjTree& par = TPtrObjTree(),
-             int indProp = -1);
+    TObjTree(const TPtrObjTree& par = TPtrObjTree(), int indProp = -1);
 
     inline int IndProp() const { return indProp; };
-    const TWPtrPropertyClass& Obj() const;
-    TPtrPropertyClass LockObj() const;
+    inline const TWPtrPropertyClass& Obj() const { return obj; };
+    inline TPtrPropertyClass LockObj() const { return obj.lock(); };
+    inline const TWPtrObjTree& Parent() const { return parent; };             //родительский TObjTree
+    inline TPtrObjTree LockParent() const { return parent.lock(); };
 
     void SetObj(const TPtrPropertyClass& value);
 
@@ -32,8 +33,8 @@ public:
     size_t CountChildren() const;
     TObjTree& Child(size_t index);
     const TObjTree& Child(size_t index) const;
+
     void AddChild(TPtrPropertyClass value, int indProp);
-    void DelChild(TObjTree* value);
     void DelChild(TPtrPropertyClass value, int indProp);
 
     void Clear();//очищаем полностью объект
@@ -57,7 +58,6 @@ public:
     bool IsBool() const;
     bool IsEditable() const;
 
-    TObjTree* Parent();             //родительский TObjTree
     int Num(int def = -1) const;    //номер по порядку в Child списке родителя
 
     bool IsChecked() const;
@@ -82,18 +82,16 @@ private:
     void CallUpdate();
     TOnUpdateTree GetFunUpdate();
 
-    TVecObjTree props;
-    TVecObjTree children;
+    std::vector<TPtrObjTree> props;
+    std::vector<TPtrObjTree> children;
     bool isLoaded = false;
-    TChangeThePropertyClass funChecked;
-    TChangeThePropertyClass FindFunChecked() const;
 
     bool HasChild(const TPtrPropertyClass& value) const;
 
     TCustClass* RootInfo() const;
-    //TCustClass* CustInfo(const TPropertyManager& man, bool chkClasses) const;
     TCustClass* ClassCustoms(const TPropertyManager &man, bool checkClass) const;
-    TCustClass* PropCustoms(const TPropertyManager &man) const;
+
+    bool IsProp(TPtrPropertyClass& lock) const;
 };
 
 enum class TShowProp{
@@ -196,7 +194,7 @@ public:
 
 protected:
     TCustClass classCustoms;
-    TObjTree tree;
+    TPtrObjTree tree = std::make_shared<TObjTree>();
 };
 
 

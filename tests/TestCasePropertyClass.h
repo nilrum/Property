@@ -31,29 +31,12 @@ public:
     TPtrPropertyClass ClassVar() const { return classVar; };
     void SetClassVar(const TPtrPropertyClass& value) { classVar = value; };
 
-    size_t CountChildren() const
-    {
-        return children.size();
-    };
-    TPtrPropertyClass Child(int index) const{ return children[index]; };
-    TPtrPropertyClass AddChild(const TPtrPropertyClass& value)
-    {
-        children.push_back(value);
-        return value;
-    };
-    void DelChild(const TPtrPropertyClass& value)
-    {
-        for(auto it = children.begin(); it != children.end(); it++)
-            if(*it == value) {
-                children.erase(it);
-                break;
-            }
-    }
 
     PROPERTY_FUN(bool, boolVar, BoolVar, SetBoolVar);
     PROPERTY_FUN(double, doubleVar, DoubleVar, SetDoubleVar);
     PROPERTY_FUN(TTestEnumInher, enumVar, EnumVar, SetEnumVar);
     PROPERTY_FUN(TPtrPropertyInher2, classVar2, ClassVar2, SetClassVar2);
+    PROPERTY_ARRAY_FUN_CHG(TPtrPropertyClass, children, CountChildren, Child, AddChild, DelChild);
 
     PROPERTIES(TPropertyInher, TPropertyClass,
            PROPERTY(int, intVar, IntVar, SetIntVar);
