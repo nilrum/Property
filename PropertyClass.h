@@ -28,7 +28,7 @@ using TGetIndFun = std::function<TVariable(const TPropertyClass *, int)>;
 using TChangePropertyClass = sigslot::signal<>;
 using TIdConnect = sigslot::scoped_connection;
 using TChangeThePropertyClass = std::function<void(TPtrPropertyClass value, const TString& fullName)>;
-
+using TOnNotify = sigslot::signal<>;
 #include "PropertyClass.hpp"
 
 
