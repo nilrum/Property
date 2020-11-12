@@ -115,10 +115,11 @@ TEST(PropertyTest, TPropertyInher)
     EXPECT_EQ(a.IndexProperty("stringVar"), 2);
     EXPECT_EQ(a.IndexProperty("boolVar"), 3);
     EXPECT_EQ(a.IndexProperty("doubleVar"), 4);
-    EXPECT_EQ(a.IndexProperty("classVar"), 5);
-    EXPECT_EQ(a.IndexProperty("classVar2"), 6);
-    EXPECT_EQ(a.IndexProperty("children"), 7);
-    EXPECT_EQ(a.IndexProperty("enumVar"), 8);
+    EXPECT_EQ(a.IndexProperty("enumVar"), 5);
+    EXPECT_EQ(a.IndexProperty("classVar"), 6);
+    EXPECT_EQ(a.IndexProperty("classVar2"), 7);
+    EXPECT_EQ(a.IndexProperty("children"), 8);
+
     EXPECT_EQ(a.IndexProperty("notFind"), -1);
 
     EXPECT_EQ(a.ReadProperty(0).ToString(), TString("nameValue"));
@@ -169,13 +170,13 @@ TEST(PropertyTest, TPropertyInher)
     EXPECT_EQ(a.ReadProperty("doubleVar").ToDouble(), 7.8901);
 
     //enum
-    a.WriteProperty(8, TVariable(teTwo));
-    EXPECT_EQ(a.ReadProperty(8).ToEnum<TTestEnumInher>(), teTwo);
+    a.WriteProperty(5, TVariable(teTwo));
+    EXPECT_EQ(a.ReadProperty(5).ToEnum<TTestEnumInher>(), teTwo);
 
-    TTestEnumInher enumVar = a.ReadProperty(8).ToEnum<TTestEnumInher>();
+    TTestEnumInher enumVar = a.ReadProperty(5).ToEnum<TTestEnumInher>();
     EXPECT_EQ(enumVar, teTwo);
 
-    TString enumStr = a.ReadProperty(8);
+    TString enumStr = a.ReadProperty(5);
     EXPECT_EQ(enumStr, "teTwo");
 
     a.WriteProperty("enumVar", TVariable(teThree));
@@ -188,41 +189,41 @@ TEST(PropertyTest, TPropertyInher)
     EXPECT_EQ(a.ReadProperty("enumVar").ToEnum<TTestEnumInher>(), teTwo);
 
     //class TPropertyClass
-    TPtrPropertyClass var = a.ReadProperty(5).ToType<TPtrPropertyClass>();
+    TPtrPropertyClass var = a.ReadProperty(6).ToType<TPtrPropertyClass>();
     EXPECT_TRUE(var);
     EXPECT_EQ(var->Name(), TString("classVar"));
 
-    TPtrPropertyClass var2 = VariableToPropClass(a.ReadProperty(5));
+    TPtrPropertyClass var2 = VariableToPropClass(a.ReadProperty(6));
     EXPECT_TRUE(var2);
     EXPECT_EQ(var2->Name(), TString("classVar"));
 
-    a.WriteProperty(5, PropertyClassToVariable(std::make_shared<TPropertyClass>()));
+    a.WriteProperty(6, PropertyClassToVariable(std::make_shared<TPropertyClass>()));
 
-    TPtrPropertyClass var3 = VariableToPropClass(a.ReadProperty(5));
+    TPtrPropertyClass var3 = VariableToPropClass(a.ReadProperty(6));
     EXPECT_TRUE(var3);
     EXPECT_EQ(var3->Name(), TString(""));
 
     //class Inherited TPropertyClass
-    TPtrPropertyClass inhr = VariableToPropClass(a.ReadProperty(6));
+    TPtrPropertyClass inhr = VariableToPropClass(a.ReadProperty(7));
     EXPECT_TRUE(inhr);
     EXPECT_EQ(inhr->Name(), TString("classVar2"));
     EXPECT_EQ(inhr->ReadProperty("intVar2").ToInt(), 5);
 
-    TPtrPropertyClass inhr2 = a.ReadProperty(6).ToType<TPtrPropertyClass>();
+    TPtrPropertyClass inhr2 = a.ReadProperty(7).ToType<TPtrPropertyClass>();
     EXPECT_TRUE(inhr2);
 
-    TPtrPropertyInher2 inhrCast = a.ReadProperty(6).ToType<TPtrPropertyInher2>();
+    TPtrPropertyInher2 inhrCast = a.ReadProperty(7).ToType<TPtrPropertyInher2>();
     EXPECT_FALSE(inhrCast);//Need use VariableCastTo<TPtrPropertyInher2>
 
-    TPtrPropertyInher2 inhrCast2 = VariableCastTo<TPtrPropertyInher2>(a.ReadProperty(6));
+    TPtrPropertyInher2 inhrCast2 = VariableCastTo<TPtrPropertyInher2>(a.ReadProperty(7));
     EXPECT_TRUE(inhrCast2);
     EXPECT_EQ(inhrCast2->Name(), TString("classVar2"));
     EXPECT_EQ(inhrCast2->IntVar2(), 5);
 
-    a.WriteProperty(6, PropertyClassToVariable(std::make_shared<TPropertyInher2>()));
+    a.WriteProperty(7, PropertyClassToVariable(std::make_shared<TPropertyInher2>()));
     EXPECT_TRUE(a.ClassVar2());
 
-    TPtrPropertyInher2 inhrCast3 = VariableCastTo<TPtrPropertyInher2>(a.ReadProperty(6));
+    TPtrPropertyInher2 inhrCast3 = VariableCastTo<TPtrPropertyInher2>(a.ReadProperty(7));
     EXPECT_TRUE(inhrCast3);
     EXPECT_EQ(inhrCast3->Name(), TString(""));
     EXPECT_EQ(inhrCast3->IntVar2(), 0);
@@ -241,7 +242,7 @@ TEST(PropertyTest, TPropertyInher)
     ASSERT_TRUE(child);
     EXPECT_EQ(child->Name(), TString("childName"));
 
-    a.AddToArray(7, PropertyClassToVariable(std::make_shared<TPropertyInher2>()));
+    a.AddToArray(8, PropertyClassToVariable(std::make_shared<TPropertyInher2>()));
     EXPECT_EQ(a.CountInArray("children"), 2);
 
     TPtrPropertyClass childInher = VariableToPropClass(a.ReadFromArray("children", 1));

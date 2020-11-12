@@ -10,48 +10,44 @@
 
 class TObjTree;
 class TCustClass;
-using TOnUpdateTree = std::function<void(TObjTree* value)>;
+
 
 using TPtrObjTree = std::shared_ptr<TObjTree>;
-using TWPtrObjTree = std::weak_ptr<TObjTree>;
+using TConstPtrObjTree = std::shared_ptr<const TObjTree>;
+using TConstWPtrObjTree = std::weak_ptr<const TObjTree>;
 
 class TObjTree : public std::enable_shared_from_this<TObjTree>{
 public:
-    TObjTree(const TPtrObjTree& par = TPtrObjTree(), int indProp = -1);
+    TObjTree(const TConstWPtrObjTree& par = TPtrObjTree(), int indProp = -1);
 
     inline int IndProp() const { return indProp; };
     inline const TWPtrPropertyClass& Obj() const { return obj; };
     inline TPtrPropertyClass LockObj() const { return obj.lock(); };
-    inline const TWPtrObjTree& Parent() const { return parent; };             //родительский TObjTree
-    inline TPtrObjTree LockParent() const { return parent.lock(); };
+    inline const TConstWPtrObjTree& Parent() const { return parent; };             //родительский TObjTree
+    inline TConstPtrObjTree LockParent() const { return parent.lock(); };
+    inline TObjTree* LockParentPtr() const { return (TObjTree*)parent.lock().get();}
 
-    void SetObj(const TPtrPropertyClass& value);
+    void Clear();//очищаем полностью объект
+    virtual void SetObj(const TPtrPropertyClass& value);
 
-    size_t CountProps() const;
-    TObjTree& Prop(size_t index);
+    const TPtrObjTree& Item(size_t index) const;
+    size_t CountItems(bool autoLoad = true) const;
 
-    size_t CountChildren() const;
-    TObjTree& Child(size_t index);
-    const TObjTree& Child(size_t index) const;
+    void RescanItems();
 
     void AddChild(TPtrPropertyClass value, int indProp);
     void DelChild(TPtrPropertyClass value, int indProp);
 
-    void Clear();//очищаем полностью объект
-    void ClearChildren();//очищаем объекты владения
     void SetCustomClass(TCustClass* value);
-
-    void Load(bool refind = false);
-
-    int LoadedCount();
-    int LoadedCountAll();
 
     TString Name() const;
     TVariable Value(bool isType = true) const;
     void SetValue(const TVariable& value);
 
+    bool HasChildren() const;//отображает может ли быть объекты в children
+
     bool IsLoaded() const;
-    bool IsChildren() const;//отображает может ли быть объекты в children
+
     bool IsProp() const;  //отображает это свойство или класс
     bool IsCheckable() const;
     bool IsColor() const;
@@ -62,36 +58,40 @@ public:
 
     bool IsChecked() const;
     void SetIsChecked(bool value);
-    void SetOnUpdateTree(TOnUpdateTree value);
+
     using TVecObjTree = TPtrVector<TObjTree>;
 
     TCustClass* ClassCustoms(bool checkClass = true) const;
-    TCustClass* PropCustoms() const;//получаем настройки для загружаемых property
-
+    TCustClass* PropCustoms() const;
     using TArrayInfo = std::tuple<TString, int>;
     using TVectArrayInfo = std::vector<TArrayInfo>;
     TVectArrayInfo ArrayInfo() const;//возвращает список свойств массивов и их номера
 private:
-    TWPtrObjTree parent;
+    TConstWPtrObjTree parent;
     TCustClass* info = nullptr;
-    TOnUpdateTree update;
     TWPtrPropertyClass obj;
-    TIdConnect idChange;
+
     int indProp = -1;
 
-    void CallUpdate();
-    TOnUpdateTree GetFunUpdate();
+    void LoadItems() const;
 
-    std::vector<TPtrObjTree> props;
-    std::vector<TPtrObjTree> children;
-    bool isLoaded = false;
+    mutable std::vector<TPtrObjTree> items;
+    mutable bool isLoaded = false;
+    TIdConnect idChange;
+    TIdConnect idDelete;
 
+    bool HasProp(const TPtrPropertyClass& value) const;
     bool HasChild(const TPtrPropertyClass& value) const;
 
     TCustClass* RootInfo() const;
     TCustClass* ClassCustoms(const TPropertyManager &man, bool checkClass) const;
 
     bool IsProp(TPtrPropertyClass& lock) const;
+
+    virtual void BeginDelete(TObjTree* objTree);
+    virtual void EndDelete(TObjTree* objTree);
+    virtual void BeginAdd(TObjTree* objTree);
+    virtual void EndAdd(TObjTree* objTree);
 };
 
 enum class TShowProp{
@@ -170,7 +170,7 @@ public:
 
 class TPropertyEditor{
 public:
-    TPropertyEditor();
+    TPropertyEditor(const TPtrObjTree& t = std::make_shared<TObjTree>());
     void Clear();
     virtual void SetObject(const TPtrPropertyClass& value);
 
@@ -194,7 +194,8 @@ public:
 
 protected:
     TCustClass classCustoms;
-    TPtrObjTree tree = std::make_shared<TObjTree>();
+    TPtrObjTree tree;
+    void SetTree(const TPtrObjTree& value);
 };
 
 

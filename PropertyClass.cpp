@@ -284,6 +284,11 @@ bool TPropertyClass::IsCustToType(const TPropertyManager &value) const
     return Manager().IsCustableTo(value);
 }
 
+TPropertyClass::~TPropertyClass()
+{
+    OnDeleting(this);
+}
+
 TVecString ListNames(const TPtrPropertyClass &value, const TString &listProp)
 {
     int index = value->IndexProperty(listProp);

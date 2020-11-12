@@ -43,10 +43,10 @@ public:
            PROPERTY(TString, stringVar, StringVar, SetStringVar);
            PROPERTY(bool, boolVar, BoolVar, SetBoolVar);
            PROPERTY(double, doubleVar, DoubleVar, SetDoubleVar);
+           PROPERTY(TTestEnumInher, enumVar, EnumVar, SetEnumVar);
            PROPERTY(TPropertyClass, classVar, ClassVar, SetClassVar);
            PROPERTY(TPropertyInher2, classVar2, ClassVar2, SetClassVar2);
            PROPERTY_ARRAY(TPropertyClass, children, CountChildren, Child, AddChild, DelChild);
-           PROPERTY(TTestEnumInher, enumVar, EnumVar, SetEnumVar);
     )
 
 private:

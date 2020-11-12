@@ -29,8 +29,9 @@ using TChangePropertyClass = sigslot::signal<>;
 using TIdConnect = sigslot::scoped_connection;
 using TChangeThePropertyClass = std::function<void(TPtrPropertyClass value, const TString& fullName)>;
 using TOnNotify = sigslot::signal<>;
-#include "PropertyClass.hpp"
+using TOnDelete = sigslot::signal<TPropertyClass*>;
 
+#include "PropertyClass.hpp"
 
 struct TPropInfo{
 private:
@@ -222,7 +223,7 @@ public:
 
     static TPtrPropertyClass CreateFromType(const TString &type);
 
-    virtual ~TPropertyClass() = default;
+    virtual ~TPropertyClass();
 
     TString TypeClass() const;
 
@@ -250,6 +251,7 @@ public:
     void DelFromArray(int index, const TVariable &value);
     void DelFromArray(const TString &nameProperty, const TVariable &value);
 
+    TOnDelete OnDeleting;
     TChangePropertyClass OnChanged;
 
     bool IsCustToType(const TString &value) const;
