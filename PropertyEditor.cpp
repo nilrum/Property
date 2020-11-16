@@ -3,6 +3,35 @@
 //
 
 #include "PropertyEditor.h"
+#include "History.h"
+
+class THistoryItemEditor : public THistoryItem{
+public:
+    THistoryItemEditor(TPtrPropertyClass ptr, int ind):obj(ptr), indProp(ind)
+    {
+        name = STDFORMAT("Edit \"%s\" property", STR(ptr->Manager().Property(ind).Name()));
+        value = ptr->ReadProperty(ind);
+    }
+
+    void Back() override
+    {
+        if(obj.expired()) return;
+        auto lock = obj.lock();
+        auto buf = lock->ReadProperty(indProp);
+        lock->WriteProperty(indProp, value);
+        value = buf;//сохраняем для Next
+    }
+
+    void Next() override
+    {
+        Back();
+    }
+private:
+    TWPtrPropertyClass obj;
+    int indProp = -1;
+    TVariable value;
+};
+
 TPropertyEditor::TPropertyEditor(const TPtrObjTree& t)
 {
     SetTree(t);
@@ -350,7 +379,11 @@ void TObjTree::SetValue(const TVariable &value)
 {
     TPtrPropertyClass lock;
     if(IsProp(lock))
+    {
+        if(THistory::IsUsed())
+            THistory::Single()->AddItem(std::make_shared<THistoryItemEditor>(lock, indProp));
         lock->WriteProperty(indProp, value);
+    }
 }
 
 TObjTree::TVectArrayInfo TObjTree::ArrayInfo() const
