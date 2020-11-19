@@ -12,6 +12,7 @@ public:
     THistoryItem(const TString& text = TString()){ name = text; }
     virtual void Back(){};
     virtual void Next(){};
+    virtual bool MergeItem(THistoryItem* value) { return false; }//можно ли объединить два элемента
     PROPERTIES(THistoryItem, TPropertyClass,)
 };
 
@@ -45,6 +46,17 @@ protected:
     std::vector<TPtrHistoryItem> items;
 };
 
+#define HISTORY(TYPE, ...)\
+    { if(THistory::IsUsed()) THistory::Single()->AddItem(std::make_shared<TYPE>(__VA_ARGS__)); }
 
+#define HISTORY_ITEM(VALUE) \
+    { if(THistory::IsUsed()) THistory::Single()->AddItem(VALUE); }
+
+#define HISTORY_BEFORE(TYPE, ...) \
+    std::shared_ptr<TYPE> item = std::make_shared<TYPE>(__VA_ARGS__); \
+
+#define HISTORY_AFTER(FUNC) FUNC; HISTORY_ITEM(item)
+
+#define HISTORY_CLEAR() { if(THistory::IsUsed()) THistory::Single()->Clear(); }
 
 #endif //NEO_HISTORY_H

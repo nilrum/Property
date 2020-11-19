@@ -39,11 +39,12 @@ void THistory::Next()
 
 void THistory::AddItem(const TPtrHistoryItem &value)
 {
-    if(posItem != -1 && posItem != int(items.size() - 1))//если мы не в конце истории
+    if(posItem != int(items.size() - 1))//если мы не в конце истории
     {                                               //то надо удалить сначало что переписываем
-        items.erase(items.begin() + posItem + 1, items.end());
+        items.erase(items.begin() + (posItem + 1), items.end());
     }
-    items.push_back(value);
+    if(items.empty() || items.back()->MergeItem(value.get()) == false)
+        items.push_back(value);
     posItem = items.size() - 1;
     OnChanged();
 }

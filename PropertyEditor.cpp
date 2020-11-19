@@ -380,8 +380,7 @@ void TObjTree::SetValue(const TVariable &value)
     TPtrPropertyClass lock;
     if(IsProp(lock))
     {
-        if(THistory::IsUsed())
-            THistory::Single()->AddItem(std::make_shared<THistoryItemEditor>(lock, indProp));
+        HISTORY(THistoryItemEditor, lock, indProp)
         lock->WriteProperty(indProp, value);
     }
 }

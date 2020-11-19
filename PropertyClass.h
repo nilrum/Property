@@ -211,8 +211,6 @@ private:
     bool CheckSet(int index) const;
 };
 
-#include <sigslot/signal.hpp>
-
 class TPropertyClass: public std::enable_shared_from_this<TPropertyClass> {
 protected:
     TString name;
