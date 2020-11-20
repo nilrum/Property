@@ -283,11 +283,11 @@ TEST(PropertyTest, Serialization)
 
     TString fileName = "a.xml";
     TSerialization ser(TSerializationKind::skXml);
-    TString data = ser.SaveTo(a);
+    TString data = ser.SaveTo(&a);
     EXPECT_FALSE(data.empty());
 
     TPropertyInher b;
-    EXPECT_TRUE(ser.LoadFrom(data, b));
+    EXPECT_TRUE(ser.LoadFrom(data, &b).IsNoError());
 
     EXPECT_EQ(b.Name(), TString("Var a"));
     EXPECT_EQ(b.IntVar(), 10);
@@ -302,10 +302,10 @@ TEST(PropertyTest, Serialization)
     EXPECT_EQ(b.Child(0)->ReadProperty("intVar2").ToInt(), 80);
     EXPECT_EQ(b.Child(1)->Name(), TString("childProp"));
 
-    EXPECT_TRUE(ser.SaveToFile(fileName, a));
+    EXPECT_TRUE(ser.SaveToFile(fileName, &a).IsNoError());
 
     TPropertyInher c;
-    EXPECT_TRUE(ser.LoadFromFile(fileName, c));
+    EXPECT_TRUE(ser.LoadFromFile(fileName, &c).IsNoError());
 
     EXPECT_EQ(c.Name(), TString("Var a"));
     EXPECT_EQ(c.IntVar(), 10);
@@ -320,10 +320,10 @@ TEST(PropertyTest, Serialization)
     EXPECT_EQ(c.Child(0)->ReadProperty("intVar2").ToInt(), 80);
     EXPECT_EQ(c.Child(1)->Name(), TString("childProp"));
 
-    EXPECT_TRUE(ser.SavePropToFileName("prop_" + fileName, a, "children"));
+    EXPECT_TRUE(ser.SavePropToFileName("prop_" + fileName, &a, "children").IsNoError());
 
     TPropertyInher d;
-    EXPECT_TRUE(ser.LoadPropFromFileName("prop_" + fileName, d, "children"));
+    EXPECT_TRUE(ser.LoadPropFromFileName("prop_" + fileName, &d, "children").IsNoError());
 
     ASSERT_EQ(d.CountChildren(), 2);
     EXPECT_EQ(d.Child(0)->Name(), TString("childInher"));

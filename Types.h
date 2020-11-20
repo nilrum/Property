@@ -113,6 +113,7 @@ public:
     inline bool IsNoError() const { return code == Ok; }
     inline bool IsError() const { return code != Ok; }
     inline bool IsCancel() const { return code == Cancel; }
+    inline bool IsHardError() const { return IsError() && IsCancel() == false; }
     template<typename T>
         inline bool Is(const T& value) { return static_cast<T>(code) == value && *info == typeid(T); }
 

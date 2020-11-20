@@ -67,7 +67,8 @@ public:
     using TCallFunction = std::function<TResult()>;
 
     static TPoolFunction* Create(TPtrProgress progress = TPtrProgress());
-    virtual void Start();
+    void Start();
+    void Reset();
     void Add(TCallFunction value);
     TPtrProgress& Progress() { return progress; };
 
@@ -81,7 +82,5 @@ private:
     std::vector<TCallFunction> functions;
     std::atomic<int> results;
     TResult error;
-    void CallStep(TResult value);
-    void Reset();
 };
 #endif //NEO_PROGRESS_H

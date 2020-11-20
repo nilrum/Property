@@ -170,3 +170,8 @@ void TPoolFunction::Add(TPoolFunction::TCallFunction value)
     functions.push_back(value);
 }
 
+void TPoolFunction::Reset()
+{
+    ptr.reset();//освобождаем
+}
+

@@ -5,27 +5,33 @@
 #include "Serialization.h"
 #include <pugixml.hpp>
 
+REGISTER_CODES(TSerializationResult,
+    TEXT_CODE(FileNotOpen, "File not opened");
+    TEXT_CODE(FileNotSave, "File not saved");
+    TEXT_CODE(ErrorData, "Error loadable data");
+    )
+
 class TSerializationXml : public TSerializationInterf{
 public:
-    virtual TString SaveTo(const TPropertyClass& value) const override;
-    virtual bool LoadFrom(const TString& text, TPropertyClass& value) const override;
+    virtual TString SaveTo(TPropertyClass *value) const override;
+    virtual TResult LoadFrom(const TString& text, TPropertyClass *value) const override;
 
-    virtual bool SaveToFile( const TString& path, const TPropertyClass& value) const override;
-    virtual bool LoadFromFile(const TString& path, TPropertyClass& value) const;
+    virtual TResult SaveToFile(const TString& path, TPropertyClass *value) const override;
+    virtual TResult LoadFromFile(const TString& path, TPropertyClass *value) const;
 
-    virtual bool SavePropToFile(const TString& path, const TPropertyClass& value, const TPropInfo &prop) const override;
-    virtual bool LoadPropFromFile(const TString& path, TPropertyClass& value, const TPropInfo& prop) const override;
+    virtual TResult SavePropToFile(const TString& path, TPropertyClass *value, const TPropInfo &prop) const override;
+    virtual TResult LoadPropFromFile(const TString& path, TPropertyClass *value, const TPropInfo& prop) const override;
 
 protected:
     void Save(const TPropertyClass *obj, pugi::xml_node &node, const TString &rootName) const;
-    bool Load(TPropertyClass *obj, const pugi::xml_node &node) const;
+    TResult Load(TPropertyClass *obj, const pugi::xml_node &node) const;
 
     void Save(const TPropertyClass *obj, pugi::xml_node &node, const TPropInfo &prop) const;
-    bool Load(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
+    TResult Load(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
 
     void SaveList(const TPropertyClass *obj, pugi::xml_node &node, const TPropInfo &prop) const;
-    void LoadList(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
-    void LoadListCheck(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
+    TResult LoadList(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
+    TResult LoadListCheck(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad = false) const;
 };
 
 
@@ -39,34 +45,37 @@ struct xml_string_writer : public pugi::xml_writer
     }
 };
 
-TString TSerializationXml::SaveTo(const TPropertyClass &value) const
+TString TSerializationXml::SaveTo(TPropertyClass *value) const
 {
     pugi::xml_document xml;
-    Save(&value, xml, value.TypeClass());
+    Save(value, xml, value->TypeClass());
     xml_string_writer stringWriter;
     xml.save(stringWriter);
     return stringWriter.result;
 }
 
-bool TSerializationXml::LoadFrom(const TString &text, TPropertyClass &value) const
+TResult TSerializationXml::LoadFrom(const TString &text, TPropertyClass *value) const
 {
     pugi::xml_document xml;
-    if (xml.load_buffer(text.c_str(), text.size()) == false) return false;
-    return Load(&value, xml.first_child());
+    if(xml.load_buffer(text.c_str(), text.size()) == false) return TSerializationResult::ErrorData;
+    return Load(value, xml.first_child());
 }
 
-bool TSerializationXml::SaveToFile(const TString &path, const TPropertyClass &value) const
+TResult TSerializationXml::SaveToFile(const TString &path, TPropertyClass *value) const
 {
     pugi::xml_document xml;
-    Save(&value, xml, value.TypeClass());
-    return xml.save_file(path.c_str());
+    Save(value, xml, value->TypeClass());
+    return xml.save_file(path.c_str()) ? TResult() : TSerializationResult::FileNotSave;
 }
 
-bool TSerializationXml::LoadFromFile(const TString &path, TPropertyClass &value) const
+TResult TSerializationXml::LoadFromFile(const TString &path, TPropertyClass *value) const
 {
     pugi::xml_document xml;
-    if (xml.load_file(path.c_str()) == false) return false;
-    return Load(&value, xml.first_child());
+    auto res = xml.load_file(path.c_str());
+    if (res) return Load(value, xml.first_child());
+    if (res.status == pugi::status_file_not_found)
+        return TSerializationResult::FileNotOpen;
+    return TSerializationResult::ErrorData;
 }
 
 void TSerializationXml::Save(const TPropertyClass *obj, pugi::xml_node &node, const TString &rootName) const
@@ -117,7 +126,7 @@ void TSerializationXml::SaveList(const TPropertyClass *obj, pugi::xml_node &node
     }
 }
 
-bool TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node) const
+TResult TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node) const
 {
     const TPropertyManager &man = obj->Manager();
 
@@ -125,41 +134,43 @@ bool TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node) co
     {
         pugi::xml_node child = *it;
         const TPropInfo &prop = man.FindProperty(child.name());
-        Load(obj, child, prop);
+        TResult res = Load(obj, child, prop);
+        if(res.IsHardError()) return res;
     }
-    return true;
+    return TResult();
 }
 
-bool TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad) const
+TResult TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad) const
 {
     TString kind = node.attribute("kind").value();
     if (kind == "class")
     {
-        if(prop.IsReadLoadable(isLoad) == false) return false;
+        if(prop.IsReadLoadable(isLoad) == false) return TResult::Cancel;//если свойство не читаемое отменяем
         TPtrPropertyClass ptr = VariableToPropClass(prop.CallGet(obj));
         if (ptr == nullptr)
         {
-            if(prop.IsLoadable(isLoad) == false) return false;
+            if(prop.IsLoadable(isLoad) == false) return TResult::Cancel;//если свойство только для чтения отменяем
             ptr = TPropertyClass::CreateFromType(node.attribute("type").as_string());
             prop.CallSet(obj, PropertyClassToVariable(ptr));
         }
-        if (ptr) Load(ptr.get(), node);//не стал проверять результат
+        if (ptr) return Load(ptr.get(), node);//если объект есть или создался
     }
     else if (kind == "list")
     {
-        if (prop.IsReadLoadable(isLoad) == false) return false;
+        if (prop.IsReadLoadable(isLoad) == false) return TResult::Cancel;
         if(prop.IsCheckName())
-            LoadListCheck(obj, node, prop, isLoad);
+            return LoadListCheck(obj, node, prop, isLoad);
         else
-            LoadList(obj, node, prop, isLoad);
+            return LoadList(obj, node, prop, isLoad);
     } else
     {
-        if (prop.IsLoadable() == false && isLoad == false) return false;
+        if (prop.IsLoadable() == false && isLoad == false) return TResult::Cancel;
         prop.CallSet(obj, TVariable(node.attribute("value").as_string()));
+        return TResult();
     }
-    return true;
+    return TResult::Cancel;
 }
-void TSerializationXml::LoadList(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad) const
+TResult TSerializationXml::LoadList(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop, bool isLoad) const
 {
     int num = 0;
     TPtrPropertyClass ptr;
@@ -177,12 +188,14 @@ void TSerializationXml::LoadList(TPropertyClass *obj, const pugi::xml_node &node
             ptr = VariableToPropClass(prop.CallGetArray(obj, num));
         if (ptr == nullptr) continue;
 
-        Load(ptr.get(), child);
+        TResult res = Load(ptr.get(), child);
+        if(res.IsHardError()) return res;
         num++;
     }
+    return TResult();
 }
 
-void TSerializationXml::LoadListCheck(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop,
+TResult TSerializationXml::LoadListCheck(TPropertyClass *obj, const pugi::xml_node &node, const TPropInfo &prop,
                                       bool isLoad) const
 {
     TPtrPropertyClass ptr;
@@ -194,42 +207,45 @@ void TSerializationXml::LoadListCheck(TPropertyClass *obj, const pugi::xml_node 
         for (auto it = node.begin(); it != node.end(); it++)
         {
             pugi::xml_node child = *it;
-            //child.find_child_by_attribute()
             const pugi::char_t *name = child.first_child().attribute("value").value();
             if(name == ptr->Name())
             {
-                Load(ptr.get(), child);
+                TResult res = Load(ptr.get(), child);
+                if(res.IsHardError()) return res;
                 break;
             }
         }
     }
+    return TResult();
 }
 
-bool TSerializationXml::SavePropToFile(const TString &path, const TPropertyClass &value, const TPropInfo &prop) const
+TResult TSerializationXml::SavePropToFile(const TString &path, TPropertyClass *value, const TPropInfo &prop) const
 {
     pugi::xml_document xml;
-    Save(&value, xml, prop);
-    return xml.save_file(path.c_str());
+    Save(value, xml, prop);
+    return xml.save_file(path.c_str()) ? TResult() : TSerializationResult::FileNotSave;
 }
 
-bool TSerializationXml::LoadPropFromFile(const TString &path, TPropertyClass &value, const TPropInfo &prop) const
+TResult TSerializationXml::LoadPropFromFile(const TString &path, TPropertyClass *value, const TPropInfo &prop) const
 {
     pugi::xml_document xml;
-    if (xml.load_file(path.c_str()) == false) return false;
-    return Load(&value, xml.first_child(), prop, true);
+    auto res = xml.load_file(path.c_str());
+    if(res) return Load(value, xml.first_child(), prop, true);
+    if(res == pugi::status_file_not_found) return TSerializationResult::FileNotOpen;
+    else return TSerializationResult::ErrorData;
 }
 
 class TSerializationBin : public TSerializationInterf
 {
 public:
-    virtual TString SaveTo(const TPropertyClass& value) const override { return TString(); }
-    virtual bool LoadFrom(const TString& text, TPropertyClass& value) const override { return false; };
+    virtual TString SaveTo(TPropertyClass *value) const override { return TString(); }
+    virtual TResult LoadFrom(const TString& text, TPropertyClass *value) const override { return false; };
 
-    virtual bool SaveToFile( const TString& path, const TPropertyClass& value) const override;
-    virtual bool LoadFromFile(const TString& path, TPropertyClass& value) const;
+    virtual TResult SaveToFile(const TString& path, TPropertyClass *value) const override;
+    virtual TResult LoadFromFile(const TString& path, TPropertyClass *value) const;
 
-    virtual bool SavePropToFile(const TString& path, const TPropertyClass& value, const TPropInfo &prop) const override{ return false;}
-    virtual bool LoadPropFromFile(const TString& path, TPropertyClass& value, const TPropInfo& prop) const override { return false; }
+    virtual TResult SavePropToFile(const TString& path, TPropertyClass *value, const TPropInfo &prop) const override{ return false;}
+    virtual TResult LoadPropFromFile(const TString& path, TPropertyClass *value, const TPropInfo& prop) const override { return false; }
 
 protected:
     enum TKindBin : uint8_t {kbClass = static_cast<uint8_t>(TVariableType::Ext) + 1, kbList};
@@ -309,11 +325,11 @@ protected:
     void SaveList(const TPropertyClass *obj, FILE* file, const TPropInfo &prop) const;
 };
 
-bool TSerializationBin::SaveToFile( const TString& path, const TPropertyClass& value)  const
+TResult TSerializationBin::SaveToFile(const TString& path, TPropertyClass *value)  const
 {
     std::shared_ptr<FILE> file = OpenFile(path, TOpenFileMode::Write);
     if(file == nullptr) return false;
-    Save(&value, file.get(), value.Name());
+    Save(value, file.get(), value->Name());
     return true;
 }
 
@@ -390,13 +406,13 @@ void TSerializationBin::SaveList(const TPropertyClass *obj, FILE* file, const TP
     std::fseek(file, long(posFinish), SEEK_SET);//переходим в конец*/
 }
 
-bool TSerializationBin::LoadFromFile(const TString& path, TPropertyClass& value) const
+TResult TSerializationBin::LoadFromFile(const TString& path, TPropertyClass *value) const
 {
     std::shared_ptr<FILE> file = OpenFile(path);
     if(file == nullptr) return false;
     TNode node;
     node.ReadNode(file.get());
-    Load(&value, file.get(), node);
+    Load(value, file.get(), node);
     return true;
 }
 
@@ -484,37 +500,37 @@ std::shared_ptr<TSerializationInterf> TSerialization::SerFromKind(TSerialization
 
 }
 
-TString TSerialization::SaveTo(const TPropertyClass &value) const
+TString TSerialization::SaveTo(TPropertyClass *value) const
 {
     if (impl) return impl->SaveTo(value);
     return TString();
 }
 
-bool TSerialization::LoadFrom(const TString &text, TPropertyClass &value) const
+TResult TSerialization::LoadFrom(const TString &text, TPropertyClass *value) const
 {
     if (impl) return impl->LoadFrom(text, value);
     return false;
 }
 
-bool TSerialization::SaveToFile(const TString &path, const TPropertyClass &value) const
+TResult TSerialization::SaveToFile(const TString &path, TPropertyClass *value) const
 {
     if (impl) return impl->SaveToFile(path, value);
     return false;
 }
 
-bool TSerialization::LoadFromFile(const TString &path, TPropertyClass &value) const
+TResult TSerialization::LoadFromFile(const TString &path, TPropertyClass *value) const
 {
     if (impl) return impl->LoadFromFile(path, value);
     return false;
 }
 
-bool TSerialization::SavePropToFile(const TString &path, const TPropertyClass &value, const TPropInfo &prop) const
+TResult TSerialization::SavePropToFile(const TString &path, TPropertyClass *value, const TPropInfo &prop) const
 {
     if (impl) return impl->SavePropToFile(path, value, prop);
     return false;
 }
 
-bool TSerialization::LoadPropFromFile(const TString &path, TPropertyClass &value, const TPropInfo &prop) const
+TResult TSerialization::LoadPropFromFile(const TString &path, TPropertyClass *value, const TPropInfo &prop) const
 {
     if (impl) return impl->LoadPropFromFile(path, value, prop);
     return false;
