@@ -13,14 +13,14 @@ REGISTER_CODES(TSerializationResult,
 
 class TSerializationXml : public TSerializationInterf{
 public:
-    virtual TString SaveTo(TPropertyClass *value) const override;
-    virtual TResult LoadFrom(const TString& text, TPropertyClass *value) const override;
+    TString SaveTo(TPropertyClass *value) const override;
+    TResult LoadFrom(const TString& text, TPropertyClass *value) const override;
 
-    virtual TResult SaveToFile(const TString& path, TPropertyClass *value) const override;
-    virtual TResult LoadFromFile(const TString& path, TPropertyClass *value) const;
+    TResult SaveToFile(const TString& path, TPropertyClass *value) const override;
+    TResult LoadFromFile(const TString& path, TPropertyClass *value) const;
 
-    virtual TResult SavePropToFile(const TString& path, TPropertyClass *value, const TPropInfo &prop) const override;
-    virtual TResult LoadPropFromFile(const TString& path, TPropertyClass *value, const TPropInfo& prop) const override;
+    TResult SavePropToFile(const TString& path, TPropertyClass *value, const TPropInfo &prop) const override;
+    TResult LoadPropFromFile(const TString& path, TPropertyClass *value, const TPropInfo& prop) const override;
 
 protected:
     void Save(const TPropertyClass *obj, pugi::xml_node &node, const TString &rootName) const;
