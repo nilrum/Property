@@ -313,7 +313,10 @@ struct TDoubleCheck{
     };
 };
 
-#define STDFORMAT(FRMT, ...) StdFormat(std::snprintf(nullptr, 0, FRMT, __VA_ARGS__) + 1, FRMT, __VA_ARGS__)
+inline const char* PtrText(const char* value) { return value; }
+inline const char* PtrText(const TString& value) { return STR(value); }
+
+#define STDFORMAT(FRMT, ...) StdFormat(std::snprintf(nullptr, 0, PtrText(FRMT), __VA_ARGS__) + 1, PtrText(FRMT), __VA_ARGS__)
 
 
 inline std::string StdFormat(int sizeBuf, const char* frmt,  ...)
