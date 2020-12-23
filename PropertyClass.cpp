@@ -172,6 +172,20 @@ TPropertyManager::TVecPropManList TPropertyManager::ListChildManagers() const
     return childManagers;
 }
 
+TPropertyManager::TVecPropManList TPropertyManager::AllListChildManagers() const
+{
+    TPropertyManager::TVecPropManList res;
+    AddChildManagers(res);
+    return res;
+}
+
+void TPropertyManager::AddChildManagers(TPropertyManager::TVecPropManList &list) const
+{
+    list.push_back(this);
+    for(const auto& chd : childManagers)
+        chd->AddChildManagers(list);
+}
+
 //TPropertyClass
 bool TPropertyClass::InitProperties() noexcept
 {

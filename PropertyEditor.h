@@ -192,9 +192,13 @@ public:
     TPropertyEditor& SetIsEdit(bool value = true);
     bool IsEdit() const;
 
+    virtual TPropertyEditor& SetIsShowType(bool value = true);
+    bool IShowType() const;
+
 protected:
     TCustClass classCustoms;
     TPtrObjTree tree;
+    bool isShowType = false;
     void SetTree(const TPtrObjTree& value);
 };
 

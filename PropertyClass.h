@@ -183,9 +183,10 @@ public:
     bool IsInit() const;
 
     void SetIsInit(bool value = true);
-    using TVecPropManList = std::vector<TPropertyManager*>;
+    using TVecPropManList = std::vector<const TPropertyManager*>;
     void AddChildManager(TPropertyManager& value);
     TVecPropManList ListChildManagers() const;
+    TVecPropManList AllListChildManagers() const;
     bool IsCustableTo(const TPropertyManager& value) const;//можно ли текущий менеджер привести к переданному(value is base class?)
 private:
     using THashProperties = std::map<TString, size_t>;
@@ -209,6 +210,8 @@ private:
     bool CheckIndex(int index) const;
     bool CheckGet(int index) const;
     bool CheckSet(int index) const;
+
+    void AddChildManagers(TVecPropManList& list) const;
 };
 
 class TPropertyClass: public std::enable_shared_from_this<TPropertyClass> {

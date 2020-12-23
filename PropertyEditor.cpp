@@ -120,6 +120,17 @@ void TPropertyEditor::SetTree(const TPtrObjTree &value)
     tree->SetCustomClass(&classCustoms);
 }
 
+TPropertyEditor &TPropertyEditor::SetIsShowType(bool value)
+{
+    isShowType = value;
+    return *this;
+}
+
+bool TPropertyEditor::IShowType() const
+{
+    return isShowType;
+}
+
 //-------------------------------------TObjTree-------------------------------------------------------------------------
 TObjTree::TObjTree(const TConstWPtrObjTree& par, int ind): parent(par), indProp(ind)
 {
