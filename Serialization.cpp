@@ -272,14 +272,14 @@ protected:
         template <typename T>
         void Read(FILE* file, T& value)
         {
-            std::fread(&value, sizeof(T), 1, file);
+            auto read = std::fread(&value, sizeof(T), 1, file);
         }
         void Read(FILE* file, TString& value)
         {
             uint32_t lenght = 0;
-            std::fread(&lenght, sizeof(uint32_t), 1, file);
+            auto read = std::fread(&lenght, sizeof(uint32_t), 1, file);
             value.resize(lenght);
-            std::fread(&value[0], sizeof(char), lenght, file);
+            read = std::fread(&value[0], sizeof(char), lenght, file);
         }
 
         void WriteNode(FILE* file)
@@ -303,10 +303,10 @@ protected:
         TVariable ReadValue(FILE* file)
         {
             uint32_t lenght = 0;
-            std::fread(&lenght, sizeof(uint32_t), 1, file);
+            auto read = std::fread(&lenght, sizeof(uint32_t), 1, file);
 
             std::vector<uint8_t> buffer(lenght);
-            std::fread(&buffer[0], sizeof(uint8_t), lenght, file);
+            read = std::fread(&buffer[0], sizeof(uint8_t), lenght, file);
 
             return TVariable::FromData(static_cast<TVariableType>(kind), &buffer[0], buffer.size());
         }
