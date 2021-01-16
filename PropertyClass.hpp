@@ -124,6 +124,7 @@ TGetIndFun GetIndFun(R (T::*method)(TInd) const)
 
 #define DEF_CREATE(TYPE) [](){ return std::make_shared<TYPE>(); }
 #define NO_CREATE() TPropertyManager::TFunCreate()
+#define SHARED_CREATE(TYPE) [](){ return TYPE::CreateShared(); }
 
 #define PROPERTIES_BASE(TYPE) PROPERTIES_BASE_CHK(TYPE, DEF_CREATE(TYPE),)
 
@@ -139,6 +140,11 @@ TGetIndFun GetIndFun(R (T::*method)(TInd) const)
     }
 
 #define PROPERTIES(TYPE, BASE, ...) PROPERTIES_CREATE(TYPE, BASE, DEF_CREATE(TYPE), __VA_ARGS__)
+#define PROPERTIES_SHARED(TYPE, BASE, ...) \
+    static std::shared_ptr<TYPE> CreateShared() { auto res = std::shared_ptr<TYPE>(new TYPE()); res->thisWeak = res; return res; } \
+    private:                       \
+        std::weak_ptr<TYPE> thisWeak;\
+    PROPERTIES_CREATE(TYPE, BASE, SHARED_CREATE(TYPE), __VA_ARGS__)
 
 
 #define INIT_PROPERTYSN(NAME, TYPE) namespace { const bool init##NAME = TYPE::InitProperties(); }
