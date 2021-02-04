@@ -371,5 +371,6 @@ template <typename T>
 
 TVecString ListNames(const TPtrPropertyClass& value, const TString& listProp);
 TPtrPropertyClass ClonePropertyClass(const TPtrPropertyClass& value);
+void ClonePropertyClass(const TPtrPropertyClass& from, const TPtrPropertyClass& to);
 
 #endif //TESTAPP_PROPERTYCLASS_H

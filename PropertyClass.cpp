@@ -316,26 +316,32 @@ TPtrPropertyClass ClonePropertyClass(const TPtrPropertyClass &value)
 {
     const TPropertyManager& man = value->Manager();
     TPtrPropertyClass res = man.CreateObj();
+    ClonePropertyClass(value, res);
+    return res;
+}
+
+void ClonePropertyClass(const TPtrPropertyClass &from, const TPtrPropertyClass &to)
+{
+    const TPropertyManager& man = from->Manager();
     for(size_t i = 0; i < man.CountProperty(); i++)
     {
         const TPropInfo & info = man.Property(i);
         if (info.IsClass())
         {
             //читаем TVariable, получаем TPropClass, клонируем его, преобразуем в TVariable, записываем в проперти
-            TPtrPropertyClass cl = VariableToPropClass(info.CallGet(value.get()));
-            info.CallSet(res.get(), PropertyClassToVariable(ClonePropertyClass(cl)));
+            TPtrPropertyClass cl = VariableToPropClass(info.CallGet(from.get()));
+            info.CallSet(to.get(), PropertyClassToVariable(ClonePropertyClass(cl)));
         }
         else if(info.IsArray())
         {
-            size_t count = info.CallGetCountArray(value.get());
+            size_t count = info.CallGetCountArray(from.get());
             for(size_t j = 0; j < count; j++)
             {
-                TPtrPropertyClass it = VariableToPropClass(info.CallGetArray(value.get(), j));
-                info.CallAddArray(res.get(), PropertyClassToVariable(ClonePropertyClass(it)));
+                TPtrPropertyClass it = VariableToPropClass(info.CallGetArray(from.get(), j));
+                info.CallAddArray(to.get(), PropertyClassToVariable(ClonePropertyClass(it)));
             }
         }
         else
-            info.CallSet(res.get(), info.CallGet(value.get()));
+            info.CallSet(to.get(), info.CallGet(from.get()));
     }
-    return res;
 }

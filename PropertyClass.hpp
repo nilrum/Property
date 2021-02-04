@@ -120,8 +120,12 @@ TGetIndFun GetIndFun(R (T::*method)(TInd) const)
         static TString TypeStatic() { return ManagerStatic().Type(); } \
         virtual TPropertyManager& Manager() CHECK { return TYPE::ManagerStatic(); }\
         virtual const TPropertyManager& Manager() const CHECK { return TYPE::ManagerStatic(); }\
-        using TYPENAME = TYPE;\
-
+        using TYPENAME = TYPE;                  \
+        template<typename... TArgs>            \
+        static std::shared_ptr<TYPE> Create(TArgs&&... args) \
+        {                                      \
+            return std::shared_ptr<TYPE>(new TYPE(std::forward<TArgs>(args)...)); \
+        }
 #define DEF_CREATE(TYPE) [](){ return std::make_shared<TYPE>(); }
 #define NO_CREATE() TPropertyManager::TFunCreate()
 #define SHARED_CREATE(TYPE) [](){ return TYPE::CreateShared(); }
@@ -141,7 +145,13 @@ TGetIndFun GetIndFun(R (T::*method)(TInd) const)
 
 #define PROPERTIES(TYPE, BASE, ...) PROPERTIES_CREATE(TYPE, BASE, DEF_CREATE(TYPE), __VA_ARGS__)
 #define PROPERTIES_SHARED(TYPE, BASE, ...) \
-    static std::shared_ptr<TYPE> CreateShared() { auto res = std::shared_ptr<TYPE>(new TYPE()); res->thisWeak = res; return res; } \
+    template<typename... TArgs>            \
+    static std::shared_ptr<TYPE> CreateShared(TArgs&&... args) \
+    {                                      \
+        auto res = std::shared_ptr<TYPE>(new TYPE(std::forward<TArgs>(args)...)); \
+        res->thisWeak = res;               \
+        return res;                        \
+    } \
     private:                       \
         std::weak_ptr<TYPE> thisWeak;\
     PROPERTIES_CREATE(TYPE, BASE, SHARED_CREATE(TYPE), __VA_ARGS__)

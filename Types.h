@@ -463,5 +463,9 @@ public:
 };
 
 #define LOG(VALUE) TSimpleLog().Log(VALUE);
+#define AND_OR_ENUM(TYPE)\
+    constexpr bool operator & (TYPE lhs, TYPE rhs) { return static_cast<int>(lhs) & static_cast<int>(lhs); }\
+    constexpr TYPE operator | (TYPE lhs, TYPE rhs) { return static_cast<TYPE>(static_cast<int>(lhs) | static_cast<int>(lhs)); }
+
 
 #endif //TESTAPP_TYPES_H
