@@ -15,6 +15,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <memory>
+#include "float.h"
 
 using TString = std::string;
 using TVecString = std::vector<TString>;
@@ -318,6 +319,7 @@ inline const char* PtrText(const TString& value) { return STR(value); }
 
 #define STDFORMAT(FRMT, ...) StdFormat(std::snprintf(nullptr, 0, PtrText(FRMT), __VA_ARGS__) + 1, PtrText(FRMT), __VA_ARGS__)
 
+TString Transliteration(TString utf8text);
 
 inline std::string StdFormat(int sizeBuf, const char* frmt,  ...)
 {
@@ -452,7 +454,34 @@ struct TConstExprMap{
 };
 
 enum class TOpenFileMode{ Read, Write, Append };
-std::shared_ptr<FILE> OpenFile(const std::string& path, TOpenFileMode mode = TOpenFileMode::Read);
+using TPtrFile = std::shared_ptr<FILE>;
+
+enum class TFileResult{Ok, ErrorRead, ErrorWrite};
+
+TPtrFile OpenFile(const std::string& path, TOpenFileMode mode = TOpenFileMode::Read);
+template<typename T>
+    TResult WriteFile(const T& value, const TPtrFile& file)
+    {
+        return std::fwrite(&value, sizeof(T), 1, file.get()) == 1 ? TResult() : TFileResult::ErrorWrite;
+    }
+
+template<typename T>
+    TResult WriteFile(const T& value, size_t index, size_t count, const TPtrFile& file)
+    {
+        return std::fwrite(&value[index], sizeof(value[index]), count, file.get()) == count ? TResult() : TFileResult::ErrorWrite;
+    }
+
+template<typename T>
+    TResult ReadFile(T& value, const TPtrFile& file)
+    {
+        return std::fread(&value, sizeof(T), 1, file.get()) == 1 ? TResult() : TFileResult::ErrorRead;
+    }
+
+template<typename T>
+    TResult ReadFile(T& value, size_t index, size_t count, const TPtrFile& file)
+    {
+        return std::fread(&value[index], sizeof(value[index]), count, file.get()) == 1 ? TResult() : TFileResult::ErrorRead;
+    }
 
 class TSimpleLog{
 public:
