@@ -65,7 +65,14 @@ TResult TSerializationXml::SaveToFile(const TString &path, TPropertyClass *value
 {
     pugi::xml_document xml;
     Save(value, xml, value->TypeClass());
-    return xml.save_file(path.c_str()) ? TResult() : TSerializationResult::FileNotSave;
+
+    //return xml.save_file(path.c_str()) ? TResult() : TSerializationResult::FileNotSave;
+
+    auto file = OpenFile(path, TOpenFileMode::Write);
+    if(file == nullptr) return TSerializationResult::FileNotSave;
+    pugi::xml_writer_file writer(file.get());
+    xml.save(writer);
+    return TResult();
 }
 
 TResult TSerializationXml::LoadFromFile(const TString &path, TPropertyClass *value) const
