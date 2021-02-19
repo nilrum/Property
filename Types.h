@@ -46,6 +46,19 @@ T &Single(T&& value)
 #define STATIC_ARG(TYPE, NAME, ...) static TYPE& NAME(){ static TYPE value(__VA_ARGS__); return value; };
 #define STATIC(TYPE, NAME) static TYPE& NAME(){ static TYPE value; return value; };
 
+#define PROXY(FUNC, LBD_ARGS) \
+    [LBD_ARGS](auto && ...a) { FUNC(std::forward<decltype(a)>(a)...); }
+
+#define INIT_SECTION(NAME, INIT) \
+    namespace INIT_##NAME{       \
+        bool Fun##NAME()         \
+        {                        \
+            INIT\
+            return true;         \
+        }                        \
+        const bool Cnst_##NAME = Fun##NAME();\
+    }
+
 template<typename T>
     std::vector<T> Split(const T& value, typename T::value_type delim)
 {
@@ -492,9 +505,15 @@ public:
 };
 
 #define LOG(VALUE) TSimpleLog().Log(VALUE);
+
 #define AND_OR_ENUM(TYPE)\
     constexpr bool operator & (TYPE lhs, TYPE rhs) { return static_cast<int>(lhs) & static_cast<int>(lhs); }\
     constexpr TYPE operator | (TYPE lhs, TYPE rhs) { return static_cast<TYPE>(static_cast<int>(lhs) | static_cast<int>(lhs)); }
 
-
+#define FOR_ENUM(BEGIN, LAST, ...) \
+    for(int i = static_cast<int>(BEGIN); i < static_cast<int>(LAST); i++)\
+    {\
+        auto e = static_cast<decltype(BEGIN)>(i);\
+        __VA_ARGS__;\
+    }
 #endif //TESTAPP_TYPES_H
