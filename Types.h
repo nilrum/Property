@@ -49,6 +49,9 @@ T &Single(T&& value)
 #define PROXY(FUNC, LBD_ARGS) \
     [LBD_ARGS](auto && ...a) { FUNC(std::forward<decltype(a)>(a)...); }
 
+#define PROXY_C(FUNC, LBD_ARGS) \
+    [LBD_ARGS](auto && ...a) { FUNC(); }
+
 #define INIT_SECTION(NAME, INIT) \
     namespace INIT_##NAME{       \
         bool Fun##NAME()         \
@@ -507,8 +510,10 @@ public:
 #define LOG(VALUE) TSimpleLog().Log(VALUE);
 
 #define AND_OR_ENUM(TYPE)\
-    constexpr bool operator & (TYPE lhs, TYPE rhs) { return static_cast<int>(lhs) & static_cast<int>(lhs); }\
-    constexpr TYPE operator | (TYPE lhs, TYPE rhs) { return static_cast<TYPE>(static_cast<int>(lhs) | static_cast<int>(lhs)); }
+    constexpr bool operator & (TYPE lhs, TYPE rhs) { return static_cast<int>(lhs) & static_cast<int>(rhs); }\
+    constexpr TYPE operator & (TYPE lhs, int rhs) { return static_cast<TYPE>(static_cast<int>(lhs) & rhs); }\
+    constexpr TYPE operator | (TYPE lhs, TYPE rhs) { return static_cast<TYPE>(static_cast<int>(lhs) | static_cast<int>(rhs)); }\
+    constexpr int operator ~(TYPE lhs) { return ~static_cast<int>(lhs); }
 
 #define FOR_ENUM(BEGIN, LAST, ...) \
     for(int i = static_cast<int>(BEGIN); i < static_cast<int>(LAST); i++)\

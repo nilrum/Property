@@ -144,18 +144,21 @@ TGetIndFun GetIndFun(R (T::*method)(TInd) const)
     }
 
 #define PROPERTIES(TYPE, BASE, ...) PROPERTIES_CREATE(TYPE, BASE, DEF_CREATE(TYPE), __VA_ARGS__)
-#define PROPERTIES_SHARED(TYPE, BASE, ...) \
+
+#define PROPERTIES_SHARED_AFTER(TYPE, BASE, AFTER, ...) \
     template<typename... TArgs>            \
     static std::shared_ptr<TYPE> CreateShared(TArgs&&... args) \
     {                                      \
         auto res = std::shared_ptr<TYPE>(new TYPE(std::forward<TArgs>(args)...)); \
-        res->thisWeak = res;               \
+        res->thisWeak = res;                      \
+        AFTER                                      \
         return res;                        \
     } \
     private:                       \
         std::weak_ptr<TYPE> thisWeak;\
     PROPERTIES_CREATE(TYPE, BASE, SHARED_CREATE(TYPE), __VA_ARGS__)
 
+#define PROPERTIES_SHARED(TYPE, BASE, ...) PROPERTIES_SHARED_AFTER(TYPE, BASE, ;, __VA_ARGS__)
 
 #define INIT_PROPERTYSN(NAME, TYPE) namespace { const bool init##NAME = TYPE::InitProperties(); }
 #define INIT_PROPERTYS(TYPE) INIT_PROPERTYSN(TYPE, TYPE)
