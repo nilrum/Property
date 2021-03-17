@@ -13,19 +13,28 @@ class TCustClass;
 
 
 using TPtrObjTree = std::shared_ptr<TObjTree>;
-using TConstPtrObjTree = std::shared_ptr<const TObjTree>;
-using TConstWPtrObjTree = std::weak_ptr<const TObjTree>;
+using TWPtrObjTree = std::weak_ptr<TObjTree>;
+using TOnTagChanged = sigslot::signal<const TPtrObjTree&>;
 
-class TObjTree : public std::enable_shared_from_this<TObjTree>{
+
+class TObjTree{
 public:
-    TObjTree(const TConstWPtrObjTree& par = TPtrObjTree(), int indProp = -1);
+    virtual ~TObjTree(){}
+
+    template<typename T = TObjTree, typename... TArgs>
+    static auto CreateShared(TArgs&&... args)
+    {
+        auto res = std::shared_ptr<T>(new T(std::forward<TArgs>(args)...));
+        res->thisWeak = res;
+        return res;
+    }
+    TPtrObjTree shared_from_this() { return thisWeak.lock(); }
 
     inline int IndProp() const { return indProp; };
     inline const TWPtrPropertyClass& Obj() const { return obj; };
     inline TPtrPropertyClass LockObj() const { return obj.lock(); };
-    inline const TConstWPtrObjTree& Parent() const { return parent; };             //родительский TObjTree
-    inline TConstPtrObjTree LockParent() const { return parent.lock(); };
-    inline TObjTree* LockParentPtr() const { return (TObjTree*)parent.lock().get();}
+    inline const TWPtrObjTree& Parent() const { return parent; };             //родительский TObjTree
+    inline TPtrObjTree LockParent() const { return parent.lock(); };
 
     void Clear();//очищаем полностью объект
     virtual void SetObj(const TPtrPropertyClass& value);
@@ -59,20 +68,26 @@ public:
     bool IsChecked() const;
     void SetIsChecked(bool value);
 
-    using TVecObjTree = TPtrVector<TObjTree>;
+    int Tag() const;
+    void SetTag(int value);
+    virtual void TagChanged(const TPtrObjTree& value);
 
     TCustClass* ClassCustoms(bool checkClass = true) const;
     TCustClass* PropCustoms() const;
     using TArrayInfo = std::tuple<TString, int>;
     using TVectArrayInfo = std::vector<TArrayInfo>;
     TVectArrayInfo ArrayInfo() const;//возвращает список свойств массивов и их номера
+protected:
+    TObjTree(const TWPtrObjTree& par = TWPtrObjTree(), int indProp = -1);
 private:
-    TConstWPtrObjTree parent;
+    TWPtrObjTree thisWeak;
+    TWPtrObjTree parent;
     TCustClass* info = nullptr;
     TWPtrPropertyClass obj;
 
     int indProp = -1;
 
+    int tag = 0;
     void LoadItems() const;
 
     mutable std::vector<TPtrObjTree> items;
@@ -170,7 +185,7 @@ public:
 
 class TPropertyEditor{
 public:
-    TPropertyEditor(const TPtrObjTree& t = std::make_shared<TObjTree>());
+    TPropertyEditor(const TPtrObjTree& t = TObjTree::CreateShared());
     void Clear();
     virtual void SetObject(const TPtrPropertyClass& value);
 

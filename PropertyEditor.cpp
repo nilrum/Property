@@ -132,7 +132,7 @@ bool TPropertyEditor::IShowType() const
 }
 
 //-------------------------------------TObjTree-------------------------------------------------------------------------
-TObjTree::TObjTree(const TConstWPtrObjTree& par, int ind): parent(par), indProp(ind)
+TObjTree::TObjTree(const TWPtrObjTree& par, int ind): parent(par), indProp(ind)
 {
 }
 
@@ -208,7 +208,7 @@ void TObjTree::LoadItems() const
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив
             if(propsInfo->CheckProp(lock.get(), man.Property(i).Name()))
-                items.emplace_back(new TObjTree(weak_from_this(), i))->SetObj(lock);
+                items.emplace_back(TObjTree::CreateShared(thisWeak, i))->SetObj(lock);
 
 
     TCustClass* classInfo = ClassCustoms(man, true);
@@ -220,7 +220,7 @@ void TObjTree::LoadItems() const
             TPtrPropertyClass ptr = VariableToPropClass(lock->ReadProperty(i));
             if (ptr == nullptr) continue;
             if (classInfo->CheckType(ptr->Manager(), info.Name()))
-                items.emplace_back(new TObjTree(weak_from_this(), i))->SetObj(ptr);
+                items.emplace_back(TObjTree::CreateShared(thisWeak, i))->SetObj(ptr);
         }
         else if (info.IsArray())
         {
@@ -230,7 +230,7 @@ void TObjTree::LoadItems() const
                 TPtrPropertyClass ptr = VariableToPropClass(lock->ReadFromArray(i, j));
                 if (ptr == nullptr) continue;
                 if (classInfo->CheckType(ptr->Manager(), info.Name()))
-                    items.emplace_back(new TObjTree(weak_from_this(), i))->SetObj(ptr);
+                    items.emplace_back(TObjTree::CreateShared(thisWeak, i))->SetObj(ptr);
             }
         }
     }
@@ -496,6 +496,23 @@ void TObjTree::EndAdd(TObjTree *objTree)
     if(parent.expired()) return;
     TObjTree* p = (TObjTree*)(LockParent().get());
     p->EndAdd(objTree);
+}
+
+int TObjTree::Tag() const
+{
+    return tag;
+}
+
+void TObjTree::SetTag(int value)
+{
+    tag = value;
+    TagChanged(thisWeak.lock());
+}
+
+void TObjTree::TagChanged(const TPtrObjTree &value)
+{
+    if(parent.expired() == false)
+        parent.lock()->TagChanged(value);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
