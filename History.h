@@ -46,18 +46,18 @@ protected:
     std::vector<TPtrHistoryItem> items;
 };
 
+#define HISTORY THistory::Single()
 
-
-#define HISTORY(TYPE, ...)\
+#define HISTORY_CREATE(TYPE, ...)\
     { if(THistory::IsUsed()) THistory::Single()->AddItem(std::make_shared<TYPE>(__VA_ARGS__)); }
 
-#define HISTORY_ITEM(VALUE) \
+#define HISTORY_ADD(VALUE) \
     { if(THistory::IsUsed()) THistory::Single()->AddItem(VALUE); }
 
 #define HISTORY_BEFORE(TYPE, ...) \
     std::shared_ptr<TYPE> item = std::make_shared<TYPE>(__VA_ARGS__); \
 
-#define HISTORY_AFTER(FUNC) FUNC; HISTORY_ITEM(item)
+#define HISTORY_AFTER(FUNC) FUNC; HISTORY_ADD(item)
 
 #define HISTORY_VEC(BEGIN, END) \
     { if(THistory::IsUsed()) for(auto it = BEGIN; it != END; it++) THistory::Single()->AddItem(*it); }

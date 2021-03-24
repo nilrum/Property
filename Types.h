@@ -513,7 +513,8 @@ public:
     constexpr bool operator & (TYPE lhs, TYPE rhs) { return static_cast<int>(lhs) & static_cast<int>(rhs); }\
     constexpr TYPE operator & (TYPE lhs, int rhs) { return static_cast<TYPE>(static_cast<int>(lhs) & rhs); }\
     constexpr TYPE operator | (TYPE lhs, TYPE rhs) { return static_cast<TYPE>(static_cast<int>(lhs) | static_cast<int>(rhs)); }\
-    constexpr int operator ~(TYPE lhs) { return ~static_cast<int>(lhs); }
+    constexpr int operator ~(TYPE lhs) { return ~static_cast<int>(lhs); }\
+    constexpr int operator *(TYPE lhs) { return static_cast<int>(lhs); }
 
 #define FOR_ENUM(BEGIN, LAST, ...) \
     for(int i = static_cast<int>(BEGIN); i < static_cast<int>(LAST); i++)\

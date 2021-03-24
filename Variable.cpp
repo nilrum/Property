@@ -60,11 +60,9 @@ std::string TVariable::TypeName() const
         case TVariableType::Str:
             return "string";
         case TVariableType::Enum:
-            return "enum";
+            return std::any_cast<TEnum>(varValue).TypeEnum();
         case TVariableType::Bool:
             return "bool";
-        case TVariableType::Ext:
-            return std::any_cast<TEnum>(varValue).TypeEnum();
         default:
             return std::string();
     }

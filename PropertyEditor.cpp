@@ -391,7 +391,7 @@ void TObjTree::SetValue(const TVariable &value)
     TPtrPropertyClass lock;
     if(IsProp(lock))
     {
-        HISTORY(THistoryItemEditor, lock, indProp)
+        HISTORY_CREATE(THistoryItemEditor, lock, indProp)
         lock->WriteProperty(indProp, value);
     }
 }
@@ -505,8 +505,11 @@ int TObjTree::Tag() const
 
 void TObjTree::SetTag(int value)
 {
-    tag = value;
-    TagChanged(thisWeak.lock());
+    if(tag != value)
+    {
+        tag = value;
+        TagChanged(thisWeak.lock());
+    }
 }
 
 void TObjTree::TagChanged(const TPtrObjTree &value)

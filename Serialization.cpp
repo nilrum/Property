@@ -66,8 +66,7 @@ TResult TSerializationXml::SaveToFile(const TString &path, TPropertyClass *value
     pugi::xml_document xml;
     Save(value, xml, value->TypeClass());
 
-    //return xml.save_file(path.c_str()) ? TResult() : TSerializationResult::FileNotSave;
-
+    //для того чтобы иметь возможность использовать кирилические пути сами создаем объект файла
     auto file = OpenFile(path, TOpenFileMode::Write);
     if(file == nullptr) return TSerializationResult::FileNotSave;
     pugi::xml_writer_file writer(file.get());
@@ -104,18 +103,22 @@ void TSerializationXml::Save(const TPropertyClass *obj, pugi::xml_node &node, co
     if (prop.IsArray())
     {
         SaveList(obj, node, prop);
-    } else
+    }
+    else
     {
         TVariable v = prop.CallGet(obj);
         if (v.Type() == TVariableType::Ext)
         {
             TPtrPropertyClass ptr = VariableToPropClass(v);
             if (ptr) Save(ptr.get(), node, prop.Name());
-        } else
+        }
+        else
         {//обычное свойство
-            pugi::xml_node child = node.append_child(prop.Name().c_str());
-            child.append_attribute("value") = v.ToString().c_str();
-            child.append_attribute("type") = v.TypeName().c_str();
+            pugi::xml_node child = node.append_child(STR(prop.Name()));
+            child.append_attribute("value") = STR(v.ToString());
+            child.append_attribute("type") = STR(v.TypeName());
+            if(v.Type() == TVariableType::Enum)
+                child.append_attribute("kind") = "enum";
         }
     }
 }
@@ -172,7 +175,16 @@ TResult TSerializationXml::Load(TPropertyClass *obj, const pugi::xml_node &node,
     } else
     {
         if (prop.IsLoadable() == false && isLoad == false) return TResult::Cancel;
-        prop.CallSet(obj, TVariable(node.attribute("value").as_string()));
+        if(kind == "enum")
+        {
+            auto enumInfo = TEnumInfo::EnumInfo(node.attribute("type").as_string());
+            if(enumInfo.IsValid() == false) return TResult::Cancel;
+            auto index = enumInfo.IndexFromName(node.attribute("value").as_string());
+            if(index == -1) return TResult::Cancel;
+            prop.CallSet(obj, TVariable(enumInfo.FromIndex(index)));
+        }
+        else
+            prop.CallSet(obj, TVariable(node.attribute("value").as_string()));
         return TResult();
     }
     return TResult::Cancel;
