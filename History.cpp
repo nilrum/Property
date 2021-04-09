@@ -55,3 +55,14 @@ void THistory::Clear()
     items.clear();
     OnChanged();
 }
+
+TString THistory::Trans(const TString &value)
+{
+    if(trans) return trans(value);
+    return value;
+}
+
+void THistory::SetTrans(const TFunTrans &value)
+{
+    trans = value;
+}

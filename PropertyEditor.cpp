@@ -5,11 +5,11 @@
 #include "PropertyEditor.h"
 #include "History.h"
 
-class THistoryItemEditor : public THistoryItem{
+class THistoryItemEditor : public THistoryItemTime{
 public:
     THistoryItemEditor(TPtrPropertyClass ptr, int ind):obj(ptr), indProp(ind)
     {
-        name = STDFORMAT("Edit \"%s\" property", STR(ptr->Manager().Property(ind).Name()));
+        name = STDFORMAT("%s \"%s\"", HISTORY_TRANSR("Edit property"), HISTORY_TRANSR(ptr->Manager().Property(ind).Name()));
         value = ptr->ReadProperty(ind);
     }
 
@@ -25,6 +25,15 @@ public:
     void Next() override
     {
         Back();
+    }
+
+    bool MergeItem(THistoryItem* value)
+    {
+        auto oth = dynamic_cast<THistoryItemEditor*>(value);
+        if(oth == nullptr || oth->indProp != indProp) return false;
+        bool res = CheckTime(*oth, std::chrono::milliseconds(500)) && oth->obj.lock() == obj.lock();
+        if(res) time = oth->time;
+        return res;
     }
 private:
     TWPtrPropertyClass obj;
@@ -164,9 +173,9 @@ void TObjTree::SetObj(const TPtrPropertyClass& value)
         if(Parent().expired())//если родителя нет значит корневой объект
             idDelete = value->OnDeleting.connect([this](TPropertyClass*)
                 {
-                    BeginDelete(this);
+                    bool isBegin = BeginDelete(this);
                     Clear();
-                    EndDelete(this);
+                    if(isBegin) EndDelete(this);
                 });
     }
 }
@@ -374,7 +383,7 @@ TString TObjTree::Name() const
 TVariable TObjTree::Value(bool isType) const
 {
     TPtrPropertyClass lock;
-    if(IsProp(lock))
+    if(IsProp(lock))//для простого свойства читаем просто его значение
         return lock->ReadProperty(indProp);
     else
     {
@@ -382,7 +391,7 @@ TVariable TObjTree::Value(bool isType) const
         if(isType)
             return (lock->TypeClass() + "::" + lock->Name()).c_str();
         else
-            return lock->ReadProperty(RootInfo()->ValueClassProperty());
+            return lock->ReadProperty(ClassCustoms(false)->ValueClassProperty());
     }
 }
 
@@ -470,11 +479,11 @@ TCustClass *TObjTree::PropCustoms() const
     return ClassCustoms(false);
 }
 
-void TObjTree::BeginDelete(TObjTree *objTree)
+bool TObjTree::BeginDelete(TObjTree *objTree)
 {
-    if(parent.expired()) return;
+    if(parent.expired()) return false;
     TObjTree* p = (TObjTree*)(LockParent().get());
-    p->BeginDelete(objTree);
+    return p->BeginDelete(objTree);
 }
 
 void TObjTree::EndDelete(TObjTree *objTree)

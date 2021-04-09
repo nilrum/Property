@@ -52,6 +52,8 @@ T &Single(T&& value)
 #define PROXY_C(FUNC, LBD_ARGS) \
     [LBD_ARGS](auto && ...a) { FUNC(); }
 
+#define PROXY_THIS(FUNC) PROXY_C(FUNC, this)
+
 #define INIT_SECTION(NAME, INIT) \
     namespace INIT_##NAME{       \
         bool Fun##NAME()         \

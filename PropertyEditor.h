@@ -16,6 +16,23 @@ using TPtrObjTree = std::shared_ptr<TObjTree>;
 using TWPtrObjTree = std::weak_ptr<TObjTree>;
 using TOnTagChanged = sigslot::signal<const TPtrObjTree&>;
 
+template<typename T>
+class TUniqueVector : public std::vector<T>{
+public:
+    T& Add(const T& value)
+    {
+        auto it = std::find(begin(), end(), value);
+        if(it == end())
+            push_back(value);
+        return back();
+    }
+    void Delete(const T& value)
+    {
+        auto it = std::find(begin(), end(), value);
+        if(it != end())
+            erase(it);
+    }
+};
 
 class TObjTree{
 public:
@@ -103,7 +120,7 @@ private:
 
     bool IsProp(TPtrPropertyClass& lock) const;
 
-    virtual void BeginDelete(TObjTree* objTree);
+    virtual bool BeginDelete(TObjTree* objTree);
     virtual void EndDelete(TObjTree* objTree);
     virtual void BeginAdd(TObjTree* objTree);
     virtual void EndAdd(TObjTree* objTree);
