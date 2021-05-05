@@ -363,7 +363,7 @@ private:
             {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB6, 0},  //6
             {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB7, 0},  //7
             {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB8, 0},  //8
-            {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB9, 0}  //9
+            {0xC3, 0x97, '1', '0', 0xE2, 0x81, 0xB9, 0}   //9
             };
 public:
     TFormatDouble(int maxEnd = 3, int maxBeg = 6){ Set(maxEnd, maxBeg); }
@@ -406,11 +406,11 @@ public:
                 while (endCheckVal > 1)
                 {
                     endCheckVal = endCheckVal / 10;
-                    if ((endVal / endCheckVal) % 10 < 5)
+                    /*if ((endVal / endCheckVal) % 10 < 5)
                     {
                         endCheckVal = endCheckVal * 10;
                         break;
-                    }
+                    }*/
                 }
                 endVal = endVal / endCheckVal;
             }
@@ -438,7 +438,7 @@ public:
         }
     }
 
-    static TString Format(double value, int maxEnd, int maxBeg = 6)
+    static TString FormatDouble(double value, int maxEnd, int maxBeg = 6)
     {
         return TFormatDouble(maxEnd, maxBeg).Round(value);
     }
