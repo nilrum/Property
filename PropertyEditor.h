@@ -45,6 +45,16 @@ public:
         res->thisWeak = res;
         return res;
     }
+
+    template<typename T = TObjTree>
+    static auto CreateShared()
+    {
+        auto res = std::shared_ptr<T>(new T());
+        res->thisWeak = res;
+        res->root = res;
+        return res;
+    }
+
     TPtrObjTree shared_from_this() { return thisWeak.lock(); }
 
     inline int IndProp() const { return indProp; };
@@ -85,6 +95,9 @@ public:
     bool IsChecked() const;
     void SetIsChecked(bool value);
 
+    TString CheckedProp() const;
+    void SetCheckedProp(const TString& value);
+
     int Tag() const;
     void SetTag(int value);
     virtual void TagChanged(const TPtrObjTree& value);
@@ -95,13 +108,16 @@ public:
     using TVectArrayInfo = std::vector<TArrayInfo>;
     TVectArrayInfo ArrayInfo() const;//возвращает список свойств массивов и их номера
 protected:
-    TObjTree(const TWPtrObjTree& par = TWPtrObjTree(), int indProp = -1);
+    TObjTree(const TWPtrObjTree& par, int indProp, const TWPtrObjTree& r);
+    TObjTree(): TObjTree(TWPtrObjTree(), -1, TWPtrObjTree()){};
 private:
     TWPtrObjTree thisWeak;
     TWPtrObjTree parent;
     TCustClass* info = nullptr;
-    TWPtrPropertyClass obj;
+    TWPtrObjTree root;
 
+    TWPtrPropertyClass obj;
+    TString checkedProp;
     int indProp = -1;
 
     int tag = 0;

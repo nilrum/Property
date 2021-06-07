@@ -258,6 +258,11 @@ public:
 
     bool IsCustToType(const TString &value) const;
     bool IsCustToType(const TPropertyManager &value) const;
+    template<typename T>
+    bool IsCustToType() const
+    {
+        return IsCustToType(T::ManagerStatic());
+    }
 
 };
 

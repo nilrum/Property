@@ -283,9 +283,9 @@ protected:
         }
         void Write(FILE* file, TString& value)
         {
-            uint32_t lenght = value.size();
-            std::fwrite(&lenght, sizeof(uint32_t), 1, file);
-            std::fwrite(&value[0], sizeof(char), lenght, file);
+            uint32_t length = value.size();
+            std::fwrite(&length, sizeof(uint32_t), 1, file);
+            std::fwrite(&value[0], sizeof(char), length, file);
         }
 
         template <typename T>
@@ -295,10 +295,10 @@ protected:
         }
         void Read(FILE* file, TString& value)
         {
-            uint32_t lenght = 0;
-            auto read = std::fread(&lenght, sizeof(uint32_t), 1, file);
-            value.resize(lenght);
-            read = std::fread(&value[0], sizeof(char), lenght, file);
+            uint32_t length = 0;
+            auto read = std::fread(&length, sizeof(uint32_t), 1, file);
+            value.resize(length);
+            read = std::fread(&value[0], sizeof(char), length, file);
         }
 
         void WriteNode(FILE* file)
@@ -321,20 +321,20 @@ protected:
 
         TVariable ReadValue(FILE* file)
         {
-            uint32_t lenght = 0;
-            auto read = std::fread(&lenght, sizeof(uint32_t), 1, file);
+            uint32_t length = 0;
+            auto read = std::fread(&length, sizeof(uint32_t), 1, file);
 
-            std::vector<uint8_t> buffer(lenght);
-            read = std::fread(&buffer[0], sizeof(uint8_t), lenght, file);
+            std::vector<uint8_t> buffer(length);
+            read = std::fread(&buffer[0], sizeof(uint8_t), length, file);
 
             return TVariable::FromData(static_cast<TVariableType>(kind), &buffer[0], buffer.size());
         }
         void WriteValue(FILE* file, const TVariable& value)
         {
             std::vector<uint8_t> buffer = value.ToData();
-            uint32_t lenght = buffer.size();
-            std::fwrite(&lenght, sizeof(uint32_t), 1, file);
-            std::fwrite(&buffer[0], sizeof(char), lenght, file);
+            uint32_t length = buffer.size();
+            std::fwrite(&length, sizeof(uint32_t), 1, file);
+            std::fwrite(&buffer[0], sizeof(char), length, file);
         }
     };
     bool Load(TPropertyClass *obj, FILE* file, const TNode& node) const;

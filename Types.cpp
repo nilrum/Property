@@ -98,3 +98,14 @@ TString Transliteration(TString utf8text)
     }
     return res;
 }
+
+TString Merge(const TVecString& values, typename TString::value_type delim)
+{
+    TString res;
+    for(const auto& r : values)
+    {
+        if(res.empty() == false) res.push_back(delim);
+        res.insert(res.end(), r.begin(), r.end());
+    }
+    return res;
+}

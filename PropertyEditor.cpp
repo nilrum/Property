@@ -141,7 +141,7 @@ bool TPropertyEditor::IShowType() const
 }
 
 //-------------------------------------TObjTree-------------------------------------------------------------------------
-TObjTree::TObjTree(const TWPtrObjTree& par, int ind): parent(par), indProp(ind)
+TObjTree::TObjTree(const TWPtrObjTree& par, int ind, const TWPtrObjTree& r): parent(par), indProp(ind), root(r)
 {
 }
 
@@ -217,7 +217,7 @@ void TObjTree::LoadItems() const
     for(size_t i = 0; i < man.CountProperty(); i++)
         if(man.Property(i).IsPod())//если есть свойства не класс и не массив
             if(propsInfo->CheckProp(lock.get(), man.Property(i).Name()))
-                items.emplace_back(TObjTree::CreateShared(thisWeak, i))->SetObj(lock);
+                items.emplace_back(TObjTree::CreateShared(thisWeak, i, root))->SetObj(lock);
 
 
     TCustClass* classInfo = ClassCustoms(man, true);
@@ -229,7 +229,7 @@ void TObjTree::LoadItems() const
             TPtrPropertyClass ptr = VariableToPropClass(lock->ReadProperty(i));
             if (ptr == nullptr) continue;
             if (classInfo->CheckType(ptr->Manager(), info.Name()))
-                items.emplace_back(TObjTree::CreateShared(thisWeak, i))->SetObj(ptr);
+                items.emplace_back(TObjTree::CreateShared(thisWeak, i, root))->SetObj(ptr);
         }
         else if (info.IsArray())
         {
@@ -239,7 +239,7 @@ void TObjTree::LoadItems() const
                 TPtrPropertyClass ptr = VariableToPropClass(lock->ReadFromArray(i, j));
                 if (ptr == nullptr) continue;
                 if (classInfo->CheckType(ptr->Manager(), info.Name()))
-                    items.emplace_back(TObjTree::CreateShared(thisWeak, i))->SetObj(ptr);
+                    items.emplace_back(TObjTree::CreateShared(thisWeak, i, root))->SetObj(ptr);
             }
         }
     }
@@ -418,24 +418,33 @@ TObjTree::TVectArrayInfo TObjTree::ArrayInfo() const
 
 bool TObjTree::IsCheckable() const
 {
+    auto ch = CheckedProp();
+    if(ch.empty()) return false;
     TPtrPropertyClass lock;
-    return IsProp(lock) == false && lock && lock->IndexProperty("isUsed") != -1;
+    return IsProp(lock) == false && lock && lock->IndexProperty(ch) != -1;
 }
 
 bool TObjTree::IsChecked() const
 {
+    auto ch = CheckedProp();
+    if(ch.empty()) return false;
+
     TPtrPropertyClass lock = LockObj();
     if(lock == nullptr) return false;
-    int index = lock->IndexProperty("isUsed");
+
+    int index = lock->IndexProperty(ch);
     if(index == -1) return false;
     return lock->ReadProperty(index).ToBool();
 }
 
 void TObjTree::SetIsChecked(bool value)
 {
+    auto ch = CheckedProp();
+    if(ch.empty()) return;
+
     TPtrPropertyClass lock = LockObj();
     if(lock == nullptr) return;
-    int index = lock->IndexProperty("isUsed");
+    int index = lock->IndexProperty(ch);
     if(index == -1) return;
     lock->WriteProperty(index, value);
 }
@@ -447,7 +456,8 @@ void TObjTree::SetCustomClass(TCustClass *value)
 
 TCustClass* TObjTree::RootInfo() const
 {
-    if(parent.expired() == false) return LockParent()->RootInfo();
+    if(parent.expired() == false && root.expired() == false)
+        return root.lock()->RootInfo();
     if(info) return info;
     return &Single<TCustClass>();
 }
@@ -525,6 +535,20 @@ void TObjTree::TagChanged(const TPtrObjTree &value)
 {
     if(parent.expired() == false)
         parent.lock()->TagChanged(value);
+}
+
+TString TObjTree::CheckedProp() const
+{
+    if(parent.expired() == false && root.expired() == false) return root.lock()->CheckedProp();
+    return checkedProp;
+}
+
+void TObjTree::SetCheckedProp(const TString &value)
+{
+    if(parent.expired() == false && root.expired() == false)
+        root.lock()->SetCheckedProp(value);
+    else
+        checkedProp = value;
 }
 
 //----------------------------------------------------------------------------------------------------------------------

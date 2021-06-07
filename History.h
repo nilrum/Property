@@ -56,10 +56,15 @@ public:
     TString Trans(const TString& value);    //перевод для текста в истории(используется для уменьшения связности)
     void SetTrans(const TFunTrans& value);  //установить функцию перевода
 
+    bool IsSavePoint() const;   //вовзращает является ли текущая точка в истории сохраненным значением
+    void SetIsSavePoint();      //устанавливает текущую точку как сохраненную
+
     PROPERTIES(THistory, TPropertyClass,
            PROPERTY_ARRAY_READ(THistoryItem, items, CountItems, Item);
            )
+
     inline int PosItem() const { return posItem; }
+    inline int PosSavePoint() const { return savePoint; }
 
     PROPERTY_ARRAY_READ_FUN(TPtrHistoryItem, items, CountItems, Item);
     void AddItem(const TPtrHistoryItem& value);
@@ -67,6 +72,8 @@ public:
     STATIC_ARG(TPtrHistory, Single, std::make_shared<THistory>())
 protected:
     int posItem = -1;
+    int savePoint = -1;
+    int historyStack = 0;//флаг для того чтобы во время операции Back или Next не было добавлений в очередь
     std::vector<TPtrHistoryItem> items;
     TFunTrans trans;
 };

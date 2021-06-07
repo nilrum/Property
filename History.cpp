@@ -24,7 +24,9 @@ bool THistory::IsEnabledNext() const
 void THistory::Back()
 {
     if(IsEnabledBack() == false) return;
+    historyStack++;
     items[posItem]->Back();
+    historyStack--;
     posItem--;
     OnChanged();
 }
@@ -32,13 +34,17 @@ void THistory::Back()
 void THistory::Next()
 {
     if(IsEnabledNext() == false) return;
+    historyStack++;
     items[posItem + 1]->Next();
+    historyStack--;
     posItem++;
     OnChanged();
 }
 
 void THistory::AddItem(const TPtrHistoryItem &value)
 {
+    if(historyStack) return;
+
     if(posItem != int(items.size() - 1))//если мы не в конце истории
     {                                               //то надо удалить сначало что переписываем
         items.erase(items.begin() + (posItem + 1), items.end());
@@ -65,4 +71,14 @@ TString THistory::Trans(const TString &value)
 void THistory::SetTrans(const TFunTrans &value)
 {
     trans = value;
+}
+
+bool THistory::IsSavePoint() const
+{
+    return posItem == savePoint;
+}
+
+void THistory::SetIsSavePoint()
+{
+    savePoint = posItem;
 }

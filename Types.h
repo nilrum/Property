@@ -46,13 +46,11 @@ T &Single(T&& value)
 #define STATIC_ARG(TYPE, NAME, ...) static TYPE& NAME(){ static TYPE value(__VA_ARGS__); return value; };
 #define STATIC(TYPE, NAME) static TYPE& NAME(){ static TYPE value; return value; };
 
-#define PROXY(FUNC, LBD_ARGS) \
-    [LBD_ARGS](auto && ...a) { FUNC(std::forward<decltype(a)>(a)...); }
+#define PROXY(FUNC) \
+    [this](auto && ...a) { FUNC(std::forward<decltype(a)>(a)...); }
 
 #define PROXY_C(FUNC, LBD_ARGS) \
     [LBD_ARGS](auto && ...a) { FUNC(); }
-
-#define PROXY_THIS(FUNC) PROXY_C(FUNC, this)
 
 #define INIT_SECTION(NAME, INIT) \
     namespace INIT_##NAME{       \
@@ -84,6 +82,9 @@ template<typename T>
     if(count) rez.emplace_back(value, begin, count);
     return rez;
 }
+
+TString Merge(const TVecString& values, typename TString::value_type delim);
+
 template<typename T>
 T Trim(const T& value)
 {
@@ -117,6 +118,17 @@ T ToLowerCase(const T& value)
     T res = value;
     std::transform(value.begin(), value.end(), res.begin(), ::tolower);
     return res;
+}
+
+template<typename T>
+T TrimBefore(const T& value, typename T::value_type delim, size_t maxCount = 0)
+{
+    auto v = std::find(value.rbegin(), value.rend(), delim);
+    if(v != value.rend())
+        return T{".."} + T{value.begin() + (value.rend() - v - 1), value.end()};//-1 чтобы знак тоже входил
+    if(maxCount == 0)
+        return value;
+    return T{value.begin() + value.size() - maxCount, value.end()};
 }
 
 class /* [[nodiscard]]*/ TResult{
