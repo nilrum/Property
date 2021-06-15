@@ -51,6 +51,27 @@ std::shared_ptr<FILE> OpenFile(const std::string& path, TOpenFileMode mode)
         return std::shared_ptr<FILE>();
 }
 
+TResult WriteStringInFile(const TString& value, const TPtrFile& file)
+{
+    auto res = WriteFile<size_t>(value.size(), file);
+    if(res.IsError()) return res;
+    return std::fwrite(STR(value), sizeof(TString::value_type), value.size(), file.get()) == value.size() ? TResult() : TFileResult::ErrorWrite;
+}
+
+
+TResult ReadStringFromFile(TString& value, const TPtrFile& file)
+{
+    size_t size = 0;
+    auto res = ReadFile(size, file);
+    if(size == 0)
+    {
+        value = TString();
+        return TResult();
+    }
+    value.resize(size);
+    return std::fread(&value[0], sizeof(TString::value_type), value.size(), file.get()) == 1 ? TResult() : TFileResult::ErrorRead;
+}
+
 void TSimpleLog::Clear()
 {
     auto file = OpenFile(DefaultPath(), TOpenFileMode::Write);

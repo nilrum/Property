@@ -501,6 +501,8 @@ template<typename T>
         return std::fwrite(&value[index], sizeof(value[index]), count, file.get()) == count ? TResult() : TFileResult::ErrorWrite;
     }
 
+    TResult WriteStringInFile(const TString& value, const TPtrFile& file);
+
 template<typename T>
     TResult ReadFile(T& value, const TPtrFile& file)
     {
@@ -512,6 +514,8 @@ template<typename T>
     {
         return std::fread(&value[index], sizeof(value[index]), count, file.get()) == 1 ? TResult() : TFileResult::ErrorRead;
     }
+
+TResult ReadStringFromFile(TString& value, const TPtrFile& file);
 
 class TSimpleLog{
 public:
