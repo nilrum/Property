@@ -62,6 +62,14 @@ T &Single(T&& value)
         const bool Cnst_##NAME = Fun##NAME();\
     }
 
+#define CLASS_PTRS_TYPE(NAME, TYPE) \
+    using TPtr##NAME = std::shared_ptr<TYPE>; \
+    using TUPtr##NAME = std::unique_ptr<TYPE>;\
+    using TWPtr##NAME = std::weak_ptr<TYPE>;  \
+    using TRaw##NAME = TYPE*;
+
+#define CLASS_PTRS(NAME) CLASS_PTRS_TYPE(NAME, T##NAME)
+
 template<typename T>
     std::vector<T> Split(const T& value, typename T::value_type delim)
 {
@@ -123,6 +131,7 @@ T ToLowerCase(const T& value)
 template<typename T>
 T TrimBefore(const T& value, typename T::value_type delim, size_t maxCount = 0)
 {
+    if(value.empty()) return value;
     auto v = std::find(value.rbegin(), value.rend(), delim);
     if(v != value.rend())
         return T{".."} + T{value.begin() + (value.rend() - v - 1), value.end()};//-1 чтобы знак тоже входил

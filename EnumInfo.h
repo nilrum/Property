@@ -36,6 +36,8 @@ public:
     const TVecDouble &Values() const { return values; }
     const std::type_info &Info() const { return *info; }
 
+    inline size_t CountNames() const { return names.size(); }
+
     inline TString Name(int index) const
     {
         if (index >= 0 && index < int(names.size())) return names[index];

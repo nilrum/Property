@@ -59,6 +59,8 @@ public:
     bool IsSavePoint() const;   //вовзращает является ли текущая точка в истории сохраненным значением
     void SetIsSavePoint();      //устанавливает текущую точку как сохраненную
 
+    inline int Tag() const { return tag; }
+    inline void SetTag(int value) { tag = value; }
     PROPERTIES(THistory, TPropertyClass,
            PROPERTY_ARRAY_READ(THistoryItem, items, CountItems, Item);
            )
@@ -74,6 +76,7 @@ protected:
     int posItem = -1;
     int savePoint = -1;
     int historyStack = 0;//флаг для того чтобы во время операции Back или Next не было добавлений в очередь
+    int tag = 0;
     std::vector<TPtrHistoryItem> items;
     TFunTrans trans;
 };
