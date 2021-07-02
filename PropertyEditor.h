@@ -56,6 +56,7 @@ public:
     }
 
     TPtrObjTree shared_from_this() { return thisWeak.lock(); }
+    TPtrObjTree Root() const { return root.lock(); }
 
     inline int IndProp() const { return indProp; };
     inline const TWPtrPropertyClass& Obj() const { return obj; };
@@ -72,6 +73,7 @@ public:
     void RescanItems();
 
     void AddChild(TPtrPropertyClass value, int indProp);
+    void AddChild(TPtrPropertyClass value, const TString& nameProp);
     void DelChild(TPtrPropertyClass value, int indProp);
 
     void SetCustomClass(TCustClass* value);
@@ -160,7 +162,7 @@ enum class TShowClass{
 };
 
 using TCheckPropFun = std::function<bool(TPropertyClass*, const TString&)>;
-using TComboListFun = std::function<std::vector<TString>()>;
+using TComboListFun = std::function<std::vector<TString>(TObjTree*)>;
 
 struct TCustProp{
     bool visible = true;
@@ -213,6 +215,7 @@ public:
     bool CheckProp(TPropertyClass* obj, const TString& value);
 
     void Clear();
+    void Set(const TCustClass& value);
     TCustProp& CustProp(const TString& value);
 };
 

@@ -96,10 +96,11 @@ TString Merge(const TVecString& values, typename TString::value_type delim);
 template<typename T>
 T Trim(const T& value)
 {
-    auto begin = std::find_if_not(value.begin(), value.end(), ::isspace);
+    auto isspace = [](char ch) { return std::isspace(static_cast<unsigned char>(ch)); };
+    auto begin = std::find_if_not(value.begin(), value.end(), isspace);
     auto end = value.end();
     if(begin != end)
-        end = std::find_if_not(value.rbegin(), value.rend(), ::isspace).base();
+        end = std::find_if_not(value.rbegin(), value.rend(), isspace).base();
     return TString(begin, end);
 }
 

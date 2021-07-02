@@ -295,6 +295,14 @@ void TObjTree::AddChild(TPtrPropertyClass value, int indProp)
         lock->AddToArray(indProp, PropertyClassToVariable(value));
 }
 
+void TObjTree::AddChild(TPtrPropertyClass value, const TString &nameProp)
+{
+    auto lock = LockObj();
+    if(lock)
+        lock->AddToArray(nameProp, PropertyClassToVariable(value));
+}
+
+
 void TObjTree::DelChild(TPtrPropertyClass value, int indProp)
 {
     auto lock = LockObj();
@@ -550,7 +558,6 @@ void TObjTree::SetCheckedProp(const TString &value)
     else
         checkedProp = value;
 }
-
 //----------------------------------------------------------------------------------------------------------------------
 
 bool TCustClass::CheckType(const TPropertyManager& value, const TString& nameProp)
@@ -678,6 +685,17 @@ TCustProp &TCustClass::CustProp(const TString &value)
     auto it = props.find(value);
     if(it != props.end()) return it->second;
     return Single<TCustProp>();
+}
+
+void TCustClass::Set(const TCustClass &value)
+{
+    showClasses = value.showClasses;
+    showProperty = value.showProperty;
+    editProperty = value.editProperty;
+    types = value.types;
+    props = value.props;
+    valueClassProperty = value.valueClassProperty;
+    checkPropFun = value.checkPropFun;
 }
 
 

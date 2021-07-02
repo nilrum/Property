@@ -16,10 +16,6 @@ public:
     virtual ~TProgress(){};
     enum TTypeProgress{tpAbsolut = 0, tpStep};
 
-    //The functions do not call GUI functions
-    bool IsSend() const;
-    virtual TProgress& SetIsSend(bool value);
-
     double Border() const;
     TProgress& SetBorder(double value);
     void SetBorderOfMax(double coef);
@@ -36,11 +32,14 @@ public:
     TProgress& SetMaxAndBorderCoef(double value, double coef);
 
     void Progress(double value);//отправить значение прогресса
-    void Finish();//отправить максимум и закрыть диалог
+    void Finish();              //отправить максимум и закрыть диалог
+    bool IsFinished();          //возвращает активность прогресса
 
-    void SetError(TResult value);
+    void Reset();
 
-    sigslot::signal<TResult> OnFinish;
+    void SetResult(TResult value, bool isCall = true);
+    sigslot::signal<TResult> OnResult;
+
 protected:
     TTypeProgress typeProg = tpAbsolut;
     std::mutex mut;
@@ -50,15 +49,17 @@ protected:
     double borderProg = 0.; //пороговое значение для обновления отображения прогресса
     double curBorder = 0.;  //текуший порог обновления
     TString text;
-    TResult error;
-    bool isSend = false;    //используется режим пересылки прогресса TODO
     bool isChanged = true;  //изменились ли параметры прогресса
 
+    TResult result;
+
+    //функции вызываемые из главного потока
     virtual void ViewShow(){};
+    virtual void CallResult(){};
 };
 
-using TPtrProgress = std::shared_ptr<TProgress>;
-
+CLASS_PTRS(Progress)
+/*
 #include <functional>
 #include <thread>
 
@@ -82,5 +83,5 @@ private:
     std::vector<TCallFunction> functions;
     std::atomic<int> results;
     TResult error;
-};
+};*/
 #endif //NEO_PROGRESS_H

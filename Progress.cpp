@@ -34,16 +34,10 @@ void TProgress::Finish()
     Progress(maxProg + 1);
 }
 
-bool TProgress::IsSend() const
+bool TProgress::IsFinished()
 {
-    return isSend;
-}
-
-TProgress &TProgress::SetIsSend(bool value)
-{
-    isChanged = isSend != value;
-    isSend = value;
-    return *this;
+    TLock guard(mut);
+    return cur >= maxProg;
 }
 
 double TProgress::Border() const
@@ -107,12 +101,19 @@ TProgress &TProgress::SetMaxAndBorderCoef(double value, double coef)
     return *this;
 }
 
-void TProgress::SetError(TResult value)
+void TProgress::SetResult(TResult value, bool isCall)
 {
-    TLock lock(mut);
-    error = value;
+    result = value;
+    if(isCall)
+        CallResult();
 }
 
+void TProgress::Reset()
+{
+    OnResult.disconnect_all();
+    result = TResult();
+}
+/*
 //-----------------------------------------------------------------------------------------------------------
 TPoolFunction* TPoolFunction::Create(TPtrProgress progress)
 {
@@ -175,3 +176,4 @@ void TPoolFunction::Reset()
     ptr.reset();//освобождаем
 }
 
+*/
