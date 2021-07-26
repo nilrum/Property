@@ -55,7 +55,7 @@ protected:
 
     //функции вызываемые из главного потока
     virtual void ViewShow(){};
-    virtual void CallResult(){};
+    virtual void CallResult(){ OnResult(result); };
 };
 
 CLASS_PTRS(Progress)

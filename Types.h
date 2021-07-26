@@ -527,6 +527,8 @@ template<typename T>
 
 TResult ReadStringFromFile(TString& value, const TPtrFile& file);
 
+std::wstring WStringFromUtf8(const TString &value);
+
 class TSimpleLog{
 public:
     void Clear();
@@ -534,7 +536,7 @@ public:
 
     STATIC_ARG(TString, DefaultPath, "appLog.txt");
 };
-
+#define LOG_CLEAR TSimpleLog().Clear();
 #define LOG(VALUE) TSimpleLog().Log(VALUE);
 
 #define AND_OR_ENUM(TYPE)\

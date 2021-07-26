@@ -133,7 +133,7 @@ TEST(TestVariable, TestInitEnum)
 {
     TVariable ve(three);
     EXPECT_EQ(ve.Type(), TVariableType::Enum);
-    EXPECT_EQ(ve.TypeName(), "enum");
+    EXPECT_EQ(ve.TypeName(), "TTestEnum");
     EXPECT_EQ(ve.ToInt(), 2);
     EXPECT_EQ(ve.ToDouble(), 2.);
     EXPECT_EQ(ve.ToBool(), true);
@@ -141,19 +141,11 @@ TEST(TestVariable, TestInitEnum)
 
     TVariable vz(one);
     EXPECT_EQ(vz.Type(), TVariableType::Enum);
-    EXPECT_EQ(vz.TypeName(), "enum");
+    EXPECT_EQ(vz.TypeName(), "TTestEnum");
     EXPECT_EQ(vz.ToInt(), 0);
     EXPECT_EQ(vz.ToDouble(), 0.);
     EXPECT_EQ(vz.ToBool(), false);
     EXPECT_EQ(vz.ToString(), std::string("one"));
-
-    TVariable vs("2");
-    EXPECT_EQ(ve.Type(), TVariableType::Enum);
-    EXPECT_EQ(ve.TypeName(), "enum");
-    EXPECT_EQ(ve.ToInt(), 2);
-    EXPECT_EQ(ve.ToDouble(), 2.);
-    EXPECT_EQ(ve.ToBool(), true);
-    EXPECT_EQ(ve.ToString(), std::string("three"));
 
     auto names = EnumNamesFromVariable(vz);
     ASSERT_EQ(names.size(), 3);
@@ -163,7 +155,7 @@ TEST(TestVariable, TestInitEnum)
 
     TVariable vc { TTestEnumClass::second };
     EXPECT_EQ(vc.Type(), TVariableType::Enum);
-    EXPECT_EQ(vc.TypeName(), "enum");
+    EXPECT_EQ(vc.TypeName(), "TTestEnumClass");
     EXPECT_EQ(vc.ToInt(), 1);
     EXPECT_EQ(vc.ToDouble(), 1.);
     EXPECT_EQ(vc.ToBool(), true);

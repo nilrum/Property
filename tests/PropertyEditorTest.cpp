@@ -331,7 +331,7 @@ TEST(TestPropertyEditor, TestClassCustom)
 
     edit.ClassCustoms().SetValueClassProperty("intVar");
     edit.SetObject(obj);
-    EXPECT_EQ(tree.Value(false).ToString(), TString("0"));
+    EXPECT_EQ(tree.Value(false).ToString(), TString());
 
 
 }

@@ -18,19 +18,20 @@ using TOnTagChanged = sigslot::signal<const TPtrObjTree&>;
 
 template<typename T>
 class TUniqueVector : public std::vector<T>{
+    using TBase = std::vector<T>;
 public:
     T& Add(const T& value)
     {
-        auto it = std::find(begin(), end(), value);
-        if(it == end())
-            push_back(value);
-        return back();
+        auto it = std::find(TBase::begin(), TBase::end(), value);
+        if(it == TBase::end())
+            TBase::push_back(value);
+        return TBase::back();
     }
     void Delete(const T& value)
     {
-        auto it = std::find(begin(), end(), value);
-        if(it != end())
-            erase(it);
+        auto it = std::find(TBase::begin(), TBase::end(), value);
+        if(it != TBase::end())
+            TBase::erase(it);
     }
 };
 

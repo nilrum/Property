@@ -33,12 +33,7 @@ std::shared_ptr<FILE> OpenFile(const std::string& path, TOpenFileMode mode)
 #ifndef _WIN32
     f = std::fopen(path.c_str(), mode == TOpenFileMode::Read ? "rb" :( mode == TOpenFileMode::Write ? "wb" : "ab" ));
 #else
-    std::wstring pathW;
-    pathW.resize(path.size());
-
-    int newSize = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), path.size(), nullptr, 0);
-    pathW.resize(newSize);
-    MultiByteToWideChar(CP_UTF8, 0, path.c_str(), path.size(), pathW.data(), path.size());
+    std::wstring pathW = WStringFromUtf8(path);
     _wfopen_s(&f, pathW.c_str(), mode == TOpenFileMode::Read ? L"rb" :( mode == TOpenFileMode::Write ? L"wb" : L"ab" ));
 #endif
     if(f != nullptr)
@@ -128,5 +123,19 @@ TString Merge(const TVecString& values, typename TString::value_type delim)
         if(res.empty() == false) res.push_back(delim);
         res.insert(res.end(), r.begin(), r.end());
     }
+    return res;
+}
+
+std::wstring WStringFromUtf8(const TString &value)
+{
+    std::wstring res;
+#ifdef _WIN32
+
+    res.resize(value.size());
+
+    int newSize = MultiByteToWideChar(CP_UTF8, 0, value.c_str(), value.size(), nullptr, 0);
+    res.resize(newSize);
+    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), value.size(), res.data(), value.size());
+#endif
     return res;
 }
