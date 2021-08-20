@@ -16,6 +16,8 @@ public:
     TString SaveTo(TPropertyClass *value) const override;
     TResult LoadFrom(const TString& text, TPropertyClass *value) const override;
 
+    TPtrPropertyClass CreateFrom(const TString& text) const override;
+
     TResult SaveToFile(const TString& path, TPropertyClass *value) const override;
     TResult LoadFromFile(const TString& path, TPropertyClass *value) const;
 
@@ -59,6 +61,19 @@ TResult TSerializationXml::LoadFrom(const TString &text, TPropertyClass *value) 
     pugi::xml_document xml;
     if(xml.load_buffer(text.c_str(), text.size()) == false) return TSerializationResult::ErrorData;
     return Load(value, xml.first_child());
+}
+
+TPtrPropertyClass TSerializationXml::CreateFrom(const TString &text) const
+{
+    pugi::xml_document xml;
+    if(xml.load_buffer(text.c_str(), text.size()) == false) return TPtrPropertyClass();
+
+    auto node = xml.first_child();
+    auto res = TPropertyClass::CreateFromType(node.attribute("type").as_string());
+
+    if (res) Load(res.get(), node);//если создался, то загрузим его
+
+    return res;
 }
 
 TResult TSerializationXml::SaveToFile(const TString &path, TPropertyClass *value) const
@@ -254,11 +269,14 @@ TResult TSerializationXml::LoadPropFromFile(const TString &path, TPropertyClass 
     else return TSerializationResult::ErrorData;
 }
 
+
 class TSerializationBin : public TSerializationInterf
 {
 public:
     virtual TString SaveTo(TPropertyClass *value) const override { return TString(); }
     virtual TResult LoadFrom(const TString& text, TPropertyClass *value) const override { return false; };
+
+    TPtrPropertyClass CreateFrom(const TString& text) const override { return TPtrPropertyClass(); }
 
     virtual TResult SaveToFile(const TString& path, TPropertyClass *value) const override;
     virtual TResult LoadFromFile(const TString& path, TPropertyClass *value) const;
@@ -530,6 +548,13 @@ TResult TSerialization::LoadFrom(const TString &text, TPropertyClass *value) con
     if (impl) return impl->LoadFrom(text, value);
     return false;
 }
+
+TPtrPropertyClass TSerialization::CreateFrom(const TString &text) const
+{
+    if (impl) return impl->CreateFrom(text);
+    return TPtrPropertyClass();
+}
+
 
 TResult TSerialization::SaveToFile(const TString &path, TPropertyClass *value) const
 {

@@ -12,6 +12,7 @@ class TSerializationInterf
 public:
     virtual TString SaveTo(TPropertyClass *value) const = 0;
     virtual TResult LoadFrom(const TString& text, TPropertyClass *value) const = 0;
+    virtual TPtrPropertyClass CreateFrom(const TString& text) const = 0;
 
     virtual TResult SaveToFile(const TString& path, TPropertyClass *value) const = 0;
     virtual TResult LoadFromFile(const TString& path, TPropertyClass *value) const = 0;
@@ -29,6 +30,8 @@ public:
 
     TString SaveTo(TPropertyClass *value) const override;
     TResult LoadFrom(const TString& text, TPropertyClass *value) const override;
+
+    TPtrPropertyClass CreateFrom(const TString& text) const override;
 
     TResult SaveToFile(const TString& path, TPropertyClass *value) const override;
     TResult LoadFromFile(const TString& path, TPropertyClass *value) const override;

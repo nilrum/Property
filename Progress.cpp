@@ -16,13 +16,16 @@ void TProgress::Progress(double value)
                 break;
 
             case tpStep:
-                cur = cur + value;
+                if(value != 0.)
+                    cur = cur + value;
+                else
+                    cur = value;
                 break;
         }
-        if (value != 0. && borderProg != 0.)
+        if (cur > 0. && borderProg > 0.)
         {
             if (TDoubleCheck::Less(cur, curBorder))
-                return;         //если бордюр не преодолели то окно прогресса не вызываем
+                return;         //если бордюр не преодолели, то окно прогресса не вызываем
             curBorder = curBorder + borderProg; //если бордюр преодолен, то отобразим окно
         }
     }
@@ -112,6 +115,7 @@ void TProgress::Reset()
 {
     OnResult.disconnect_all();
     result = TResult();
+    cur = 0.;
 }
 /*
 //-----------------------------------------------------------------------------------------------------------
