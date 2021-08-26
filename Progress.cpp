@@ -5,7 +5,7 @@
 #include "Progress.h"
 
 
-void TProgress::Progress(double value)
+bool TProgress::Progress(double value)
 {
     {
         TLock guard(mut);
@@ -25,11 +25,12 @@ void TProgress::Progress(double value)
         if (cur > 0. && borderProg > 0.)
         {
             if (TDoubleCheck::Less(cur, curBorder))
-                return;         //если бордюр не преодолели, то окно прогресса не вызываем
+                return !isCancel;         //если бордюр не преодолели, то окно прогресса не вызываем
             curBorder = curBorder + borderProg; //если бордюр преодолен, то отобразим окно
         }
     }
     ViewShow();
+    return !IsCancel();
 }
 
 void TProgress::Finish()
@@ -116,6 +117,19 @@ void TProgress::Reset()
     OnResult.disconnect_all();
     result = TResult();
     cur = 0.;
+    isCancel = false;
+}
+
+bool TProgress::IsCancel() const
+{
+    TLock guard(mut);
+    return isCancel;
+}
+
+void TProgress::SetCancel()
+{
+    TLock guard(mut);
+    isCancel = true;
 }
 /*
 //-----------------------------------------------------------------------------------------------------------
