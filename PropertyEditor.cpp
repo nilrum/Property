@@ -3,43 +3,6 @@
 //
 
 #include "PropertyEditor.h"
-#include "History.h"
-
-class THistoryItemEditor : public THistoryItemTime{
-public:
-    THistoryItemEditor(TPtrPropertyClass ptr, int ind):obj(ptr), indProp(ind)
-    {
-        name = STDFORMAT("%s \"%s\"", HISTORY_TRANSR("Edit property"), HISTORY_TRANSR(ptr->Manager().Property(ind).Name()));
-        value = ptr->ReadProperty(ind);
-    }
-
-    void Back() override
-    {
-        if(obj.expired()) return;
-        auto lock = obj.lock();
-        auto buf = lock->ReadProperty(indProp);
-        lock->WriteProperty(indProp, value);
-        value = buf;//сохраняем для Next
-    }
-
-    void Next() override
-    {
-        Back();
-    }
-
-    bool MergeItem(THistoryItem* value)
-    {
-        auto oth = dynamic_cast<THistoryItemEditor*>(value);
-        if(oth == nullptr || oth->indProp != indProp) return false;
-        bool res = CheckTime(*oth, std::chrono::milliseconds(500)) && oth->obj.lock() == obj.lock();
-        if(res) time = oth->time;
-        return res;
-    }
-private:
-    TWPtrPropertyClass obj;
-    int indProp = -1;
-    TVariable value;
-};
 
 TPropertyEditor::TPropertyEditor(const TPtrObjTree& t)
 {
@@ -397,7 +360,7 @@ TVariable TObjTree::Value(bool isType) const
     {
         if(lock == nullptr) return TVariable();
         if(isType)
-            return (lock->TypeClass() + "::" + lock->Name()).c_str();
+            return STR(lock->TypeClass() + "::" + lock->Name());
         else
             return lock->ReadProperty(ClassCustoms(false)->ValueClassProperty());
     }
@@ -699,6 +662,41 @@ void TCustClass::Set(const TCustClass &value)
 }
 
 
+THistoryItemEditor::THistoryItemEditor(TPtrPropertyClass ptr, int ind):obj(ptr), indProp(ind)
+{
+    name = STDFORMAT("%s \"%s\"", HISTORY_TRANSR("Edit property"), HISTORY_TRANSR(ptr->Manager().Property(ind).Name()));
+    value = ptr->ReadProperty(ind);
+}
+
+THistoryItemEditor::THistoryItemEditor(TPtrPropertyClass ptr, const TString &propName):
+    THistoryItemEditor(ptr, ptr->Manager().IndexProperty(propName))
+{
+
+}
+
+
+void THistoryItemEditor::Back()
+{
+    if(obj.expired()) return;
+    auto lock = obj.lock();
+    auto buf = lock->ReadProperty(indProp);
+    lock->WriteProperty(indProp, value);
+    value = buf;//сохраняем для Next
+}
+
+void THistoryItemEditor::Next()
+{
+    Back();
+}
+
+bool THistoryItemEditor::MergeItem(THistoryItem* value)
+{
+    auto oth = dynamic_cast<THistoryItemEditor*>(value);
+    if(oth == nullptr || oth->indProp != indProp) return false;
+    bool res = CheckTime(*oth, std::chrono::milliseconds(500)) && oth->obj.lock() == obj.lock();
+    if(res) time = oth->time;
+    return res;
+}
 
 
 

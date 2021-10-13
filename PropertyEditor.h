@@ -7,6 +7,8 @@
 
 #include <deque>
 #include "PropertyClass.h"
+#include "History.h"
+
 
 class TObjTree;
 class TCustClass;
@@ -62,6 +64,10 @@ public:
     inline int IndProp() const { return indProp; };
     inline const TWPtrPropertyClass& Obj() const { return obj; };
     inline TPtrPropertyClass LockObj() const { return obj.lock(); };
+
+    template<typename T>
+        std::shared_ptr<T> CustObj() const { return std::dynamic_pointer_cast<T>(obj.lock()); }
+
     inline const TWPtrObjTree& Parent() const { return parent; };             //родительский TObjTree
     inline TPtrObjTree LockParent() const { return parent.lock(); };
 
@@ -252,6 +258,20 @@ protected:
     TPtrObjTree tree;
     bool isShowType = false;
     void SetTree(const TPtrObjTree& value);
+};
+
+
+class THistoryItemEditor : public THistoryItemTime{
+public:
+    THistoryItemEditor(TPtrPropertyClass ptr, int ind);
+    THistoryItemEditor(TPtrPropertyClass ptr, const TString& propName);
+    void Back() override;
+    void Next() override;
+    bool MergeItem(THistoryItem* value);
+private:
+    TWPtrPropertyClass obj;
+    int indProp = -1;
+    TVariable value;
 };
 
 
