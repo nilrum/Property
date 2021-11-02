@@ -305,24 +305,31 @@ public:
 };
 
 struct TDoubleCheck{
+
     static bool Equal(const double& one, const double& two)
     {
-        return fabs(one - two) < 0.00001;
+        if(one > 0. && two > 0. || one < 0. && two < 0.)
+            return std::fabs(one - two) < 0.00001;
+        else
+            return std::fabs(one + two) < 0.00001;
     }
 
     static bool Less(const double& one, const double& two)
     {
-        return two - one > 0.00001;
+        if(one > 0. && two > 0. || one < 0. && two < 0.)
+            return std::fabs(two) - std::fabs(one) > 0.00001;
+        else
+            return std::fabs(two + one) > 0.00001;
+    }
+
+    static bool Great(const double& one, const double& two)
+    {
+        return Less(two, one);
     }
 
     static bool LessEq(const double& one, const double& two)
     {
         return Less(one, two) || Equal(one, two);
-    }
-
-    static bool Great(const double& one, const double& two)
-    {
-        return one - two > 0.00001;
     }
 
     static bool GreatEq(const double& one, const double& two)
@@ -492,6 +499,35 @@ struct TConstExprMap{
         return Value();
     }
 };
+
+template<typename TArray>
+struct TIndexerVector{
+    typename TArray::reference operator() (TArray& array, int index)
+    {
+        return array[index];
+    }
+};
+
+template<typename TArray, bool isCol>
+struct TIndexerMatrix{
+    typename TArray::value_type::reference operator() (TArray& array, int index)
+    {
+        if constexpr(isCol)
+            return array[indFix][index];
+        else
+            return array[index][indFix];
+    }
+    size_t indFix = 0;
+};
+template<typename TArray, typename TIndexer = TIndexerVector<TArray> >
+void TakeAndMove(TArray& array, int opos, int npos, TIndexer get = TIndexer())
+{
+    auto el = get(array, opos);  //сохраняем элемент, который двигаем
+    int chg = opos > npos ? -1 : 1;
+    for(int i = opos; i != npos; i += chg)
+        get(array, i) = get(array, i + chg);
+    get(array, npos) = el;//присваиваем перемещенный элемент
+}
 
 enum class TOpenFileMode{ Read, Write, Append };
 using TPtrFile = std::shared_ptr<FILE>;
